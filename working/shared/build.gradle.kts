@@ -29,6 +29,12 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
+
+            val room_version = "2.8.4"
+
+            implementation("com.google.android.libraries.places:places:4.1.0")
+            implementation("com.google.maps.android:maps-compose:6.12.0")
+            implementation("androidx.room:room-runtime:$room_version")
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             
