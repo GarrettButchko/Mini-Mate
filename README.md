@@ -1,54 +1,61 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Server.
+# MiniMate
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+MiniMate is a digital companion for mini golf businesses — designed to modernize the course experience with digital scorekeeping, leaderboards, and customer insights. 
 
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+This repository is a **Kotlin Multiplatform (KMP)** project containing four applications (Admin Android, User Android, Admin iOS, and User iOS) and a shared logic module.
 
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
+## Project Structure
 
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
+- **`working/shared`**: Kotlin Multiplatform module containing shared business logic, data models, and constants used by all four apps.
+- **`working/androidApps/admin-android`**: The Android application for course administrators.
+- **`working/androidApps/user-android`**: The Android application for players.
+- **`working/iosApps/admin-ios`**: The SwiftUI application for course administrators.
+- **`working/iosApps/user-ios`**: The SwiftUI application for players.
+- **`server`**: Ktor-based backend service.
 
-### Build and Run Android Application
+## Features
 
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
+### For Players (User Apps)
+- Digital scorecards with automatic scoring.
+- Live leaderboards to compete locally or globally.
+- Personal game stats and achievements.
 
-### Build and Run Server
+### For Businesses (Admin Apps)
+- Branded experience with course details and assets.
+- Customer insights dashboard (play trends, engagement).
+- Promotions and event management.
 
-To build and run the development version of the server, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :server:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :server:run
-  ```
+## Tech Stack
 
-### Build and Run iOS Application
+- **Shared Logic**: Kotlin Multiplatform (KMP)
+- **Android**: Jetpack Compose, Kotlin
+- **iOS**: SwiftUI, SwiftData
+- **Backend**: Ktor (Server), Firebase (Auth, Firestore, Functions)
+- **Database**: Firestore (Remote), SwiftData/Room (Local)
 
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+## Getting Started
 
----
+### Android Development
+1. Open the root directory in **Android Studio**.
+2. Select either `:admin-android` or `:user-android` from the run configurations.
+3. Build and run on an emulator or device.
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+### iOS Development
+1. Navigate to `working/iosApps/`.
+2. Open `MiniMate.xcworkspace` in **Xcode**.
+3. Select either the `admin-ios` or `user-ios` scheme.
+4. Ensure `GoogleService-Info.plist` is added to the respective app targets.
+5. Build and run on a simulator or device.
+
+### Server Development
+1. Run the Ktor server via Gradle:
+   ```shell
+   ./gradlew :server:run
+   ```
+
+## Contributing
+- Follow the existing project structure: place shared logic in the `shared` module and platform-specific UI in the respective app folders.
+- Ensure all four apps are tested when making changes to shared data models.
+
+## License & Contact
+This project is maintained privately. For questions or access, contact the maintainer.
