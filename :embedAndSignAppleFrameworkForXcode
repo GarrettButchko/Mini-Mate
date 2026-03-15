@@ -1,0 +1,34 @@
+Calculating task graph as no cached configuration is available for tasks: :shared:embedAndSignAppleFrameworkForXcode module name
+Type-safe project accessors is an incubating feature.
+
+> Configure project :admin-android
+w: ⚠️ The 'org.jetbrains.kotlin.multiplatform' plugin deprecated compatibility with Android Gradle plugin: 'com.android.application'
+The 'org.jetbrains.kotlin.multiplatform' plugin will not be compatible with 'com.android.application' starting with Android Gradle Plugin 9.0.0.
+
+Please change the structure of the your project and move the usage of 'com.android.application' into a separate subproject. The new subproject should add a dependency on this KMP subproject.
+
+Read more: https://kotl.in/kmp-project-structure-migration
+Solution: Please change the structure of your project and move the usage of 'com.android.application' into a separate subproject.
+See https://kotl.in/gradle/agp-new-kmp for more details.
+
+
+> Configure project :shared
+w: ⚠️ The 'org.jetbrains.kotlin.multiplatform' plugin deprecated compatibility with Android Gradle plugin: 'com.android.library'
+The 'org.jetbrains.kotlin.multiplatform' plugin will not be compatible with 'com.android.library' starting with Android Gradle Plugin 9.0.0.
+Solution: Please use the 'com.android.kotlin.multiplatform.library' plugin instead of 'com.android.library'.
+See https://kotl.in/gradle/agp-new-kmp for more details.
+
+
+> Configure project :user-android
+w: ⚠️ The 'org.jetbrains.kotlin.multiplatform' plugin deprecated compatibility with Android Gradle plugin: 'com.android.application'
+The 'org.jetbrains.kotlin.multiplatform' plugin will not be compatible with 'com.android.application' starting with Android Gradle Plugin 9.0.0.
+
+Please change the structure of the your project and move the usage of 'com.android.application' into a separate subproject. The new subproject should add a dependency on this KMP subproject.
+
+Read more: https://kotl.in/kmp-project-structure-migration
+Solution: Please change the structure of your project and move the usage of 'com.android.application' into a separate subproject.
+See https://kotl.in/gradle/agp-new-kmp for more details.
+
+
+[Incubating] Problems report is available at: file:///Users/garrettbutchko/Documents/Projects/All_MiniMate/MiniMate/build/reports/problems/problems-report.html
+Configuration cache entry stored.

@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "889696350396",
+    "firebase_url": "https://minimate-73ad3-default-rtdb.firebaseio.com",
+    "project_id": "minimate-73ad3",
+    "storage_bucket": "minimate-73ad3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889696350396:android:c0cbed006389e5632f60b9",
+        "android_client_info": {
+          "package_name": "com.garrettbutchko.minimate.admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "889696350396-dm59iue9trj7h2bpnut9gsvudddnotfu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUaULjrHBEJGsWAjeXwbF8BRgF_ZdQdpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "889696350396-dm59iue9trj7h2bpnut9gsvudddnotfu.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "889696350396-6gp2nrr77r5v8co0is7r25kbdpf3lsa8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.garrettbutchko.MiniMate-Manager"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889696350396:android:3d6f25bf5840cefb2f60b9",
+        "android_client_info": {
+          "package_name": "com.garrettbutchko.minimate.user"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "889696350396-dm59iue9trj7h2bpnut9gsvudddnotfu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUaULjrHBEJGsWAjeXwbF8BRgF_ZdQdpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "889696350396-dm59iue9trj7h2bpnut9gsvudddnotfu.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "889696350396-6gp2nrr77r5v8co0is7r25kbdpf3lsa8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.garrettbutchko.MiniMate-Manager"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

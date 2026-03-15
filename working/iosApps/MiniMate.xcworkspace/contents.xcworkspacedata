@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <Group
+      location = "group:SharedSwift"
+      name = "SharedSwift">
+      <FileSystemSynchronizedGroup
+         location = "group:Views"
+         name = "Views">
+      </FileSystemSynchronizedGroup>
+      <FileRef
+         location = "group:Shared-Assets.xcassets">
+      </FileRef>
+      <FileSystemSynchronizedGroup
+         location = "group:ModelKotlinExtensions"
+         name = "ModelKotlinExtensions">
+      </FileSystemSynchronizedGroup>
+   </Group>
+   <FileRef
+      location = "group:admin-ios/admin-ios.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:user-ios/user-ios.xcodeproj">
+   </FileRef>
+</Workspace>
