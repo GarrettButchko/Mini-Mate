@@ -1,6 +1,7 @@
 package com.garrettbutchko.minimate.database
 
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import dev.gitlive.firebase.firestore.Timestamp
 import com.garrettbutchko.minimate.datamodels.GameDTO
@@ -24,12 +25,11 @@ data class Game(
     val endTime: Timestamp = Timestamp.now(),
     val players: List<Player> = emptyList() // Requires TypeConverter
 ) {
-    // Keep your logic here! It works fine in Room entities.
+    // Keep your logic here! It works fine in Room entities
     val holeInOneLastHole: Boolean
         get() = players.any { player ->
             player.holes.any { hole -> hole.number == 18 && hole.strokes == 1 }
         }
-
     val isActive: Boolean
         get() = started && !completed && !dismissed
 

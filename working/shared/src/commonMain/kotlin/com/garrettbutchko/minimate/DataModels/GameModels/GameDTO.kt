@@ -1,8 +1,8 @@
 package com.garrettbutchko.minimate.datamodels
 
 import com.garrettbutchko.minimate.database.Game
+import com.garrettbutchko.minimate.datamodels.PlayerDTO
 import kotlinx.serialization.Serializable
-
 import dev.gitlive.firebase.firestore.Timestamp
 
 @Serializable
@@ -20,7 +20,7 @@ data class GameDTO(
     val locationName: String? = null,
     val startTime: Timestamp,
     val endTime: Timestamp,
-    val players: List<Player> = emptyList()
+    val players: List<PlayerDTO> = emptyList()
 ){
     fun toGame(): Game {
         return Game(
