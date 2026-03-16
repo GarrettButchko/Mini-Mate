@@ -47,6 +47,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 firebase-common = { module = "dev.gitlive:firebase-common", version.ref = "firebaseKotlin" }
 firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebaseKotlin" }
 firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebaseKotlin" }
+firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "firebaseKotlin" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

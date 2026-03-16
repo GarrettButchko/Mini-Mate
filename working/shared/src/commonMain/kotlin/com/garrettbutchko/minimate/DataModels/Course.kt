@@ -48,11 +48,23 @@ data class Course(
     }
 
     companion object {
-        // Example of how you will use Firestore in the shared module:
-        // suspend fun fetchCourse(id: String): Course {
-        //     val db = Firebase.firestore
-        //     return db.collection("courses").document(id).get().data()
-        // }
+        fun create(
+            id: String,
+            name: String,
+            password: String,
+            latitude: Double,
+            longitude: Double,
+            isSupported: Boolean
+        ): Course {
+            return Course(
+                id = id,
+                name = name,
+                password = password,
+                latitude = latitude,
+                longitude = longitude,
+                isSupported = isSupported
+            )
+        }
     }
 }
 

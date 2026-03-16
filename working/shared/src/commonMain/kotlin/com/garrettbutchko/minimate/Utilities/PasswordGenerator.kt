@@ -19,13 +19,18 @@ object PasswordGenerator {
     // Public API
     fun generate(style: Style): String {
         return when (style) {
-            is Style.Strong -> generateStrong(style.length, style.useSymbols)
+            is Style.Strong -> generateStrongInternal(style.length, style.useSymbols)
             is Style.Memorable -> generateMemorable(style.length, style.includeDigits)
         }
     }
 
+    // Helper for Swift
+    fun generateStrong(length: Int = 20, useSymbols: Boolean = true): String {
+        return generateStrongInternal(length, useSymbols)
+    }
+
     // Strong Password
-    private fun generateStrong(length: Int, useSymbols: Boolean): String {
+    private fun generateStrongInternal(length: Int, useSymbols: Boolean): String {
         val finalLength = max(length, 4)
 
         val sets = mutableListOf(uppercase, lowercase, digits).apply {
@@ -68,7 +73,7 @@ object PasswordGenerator {
             for (i in 0 until syllableLength) {
                 if (output.length >= finalLength) break
                 val source = if (useConsonant) consonants else vowels
-                output.append(source[Random.nextInt(source.size)])
+                output.append(source[source.size])
                 useConsonant = !useConsonant
             }
 

@@ -5,6 +5,10 @@
       location = "group:SharedSwift"
       name = "SharedSwift">
       <FileSystemSynchronizedGroup
+         location = "group:Utilities"
+         name = "Utilities">
+      </FileSystemSynchronizedGroup>
+      <FileSystemSynchronizedGroup
          location = "group:Views"
          name = "Views">
       </FileSystemSynchronizedGroup>

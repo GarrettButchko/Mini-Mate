@@ -1,7 +1,6 @@
 package com.garrettbutchko.minimate.database
 
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import dev.gitlive.firebase.firestore.Timestamp
 import com.garrettbutchko.minimate.datamodels.GameDTO

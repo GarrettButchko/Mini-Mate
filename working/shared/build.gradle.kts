@@ -32,8 +32,6 @@ kotlin {
 
             val room_version = "2.8.4"
 
-            implementation("com.google.android.libraries.places:places:4.1.0")
-            implementation("com.google.maps.android:maps-compose:6.12.0")
             implementation("androidx.room:room-runtime:$room_version")
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
@@ -42,7 +40,19 @@ kotlin {
             implementation(libs.firebase.common)
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.auth)
+            implementation(libs.firebase.storage)
         }
+
+        val androidMain by getting {
+            dependencies {
+                implementation("com.google.android.libraries.places:places:4.1.0")
+                implementation("com.google.maps.android:maps-compose:6.12.0")
+                implementation(libs.compose.ui)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.material3)
+            }
+        }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
@@ -58,5 +68,8 @@ android {
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+    buildFeatures {
+        compose = true
     }
 }

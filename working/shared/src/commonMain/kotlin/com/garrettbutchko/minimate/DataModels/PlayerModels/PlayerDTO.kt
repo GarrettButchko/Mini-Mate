@@ -1,6 +1,5 @@
 package com.garrettbutchko.minimate.datamodels
 
-import com.garrettbutchko.minimate.datamodels.Player
 import com.garrettbutchko.minimate.DataModels.HoleModels.HoleDTO
 import kotlinx.serialization.Serializable
 
@@ -28,4 +27,22 @@ data class PlayerDTO(
             holes = holes.map { it.toHole() }
         )
     }
+
+    fun convertToLBREP(): LeaderboardEntry? {
+        if (email != null) {
+            return LeaderboardEntry(id = id, userId = userId, name = name, photoURL = photoURL, ballColorDT = ballColorDT, totalStrokes = totalStrokes, email = email)
+        } else {
+            return null
+        }
+    }
 }
+
+data class LeaderboardEntry(
+    var id: String,
+    var userId: String,
+    var name: String,
+    var photoURL: String?,
+    var ballColorDT: String?,
+    var totalStrokes: Int,
+    var email: String
+)

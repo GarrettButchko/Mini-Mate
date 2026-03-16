@@ -1,9 +1,11 @@
 package com.garrettbutchko.minimate.Room
 
 import androidx.room.TypeConverter
+import com.garrettbutchko.minimate.datamodels.Hole
 import dev.gitlive.firebase.firestore.Timestamp
 import com.garrettbutchko.minimate.datamodels.Player
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 class RoomConverters {
     private val json = Json { ignoreUnknownKeys = true }
@@ -16,6 +18,20 @@ class RoomConverters {
     fun toTimestamp(value: Long?): Timestamp? = value?.let {
         Timestamp(it, 0)
     }
+
+    // String List
+    @TypeConverter
+    fun fromStringList(value: List<String>): String = json.encodeToString(value)
+
+    @TypeConverter
+    fun toStringList(value: String): List<String> = json.decodeFromString(value)
+
+    // Hole List
+    @TypeConverter
+    fun fromHoleList(value: List<Hole>): String = json.encodeToString(value)
+
+    @TypeConverter
+    fun toHoleList(value: String): List<Hole> = json.decodeFromString(value)
 
     // Players List
     @TypeConverter

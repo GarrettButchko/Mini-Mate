@@ -1,6 +1,5 @@
 package com.garrettbutchko.minimate.datamodels
 
-
 import com.garrettbutchko.minimate.generateUUID // Assuming you have a helper for this
 import com.garrettbutchko.minimate.DataModels.HoleModels.HoleDTO
 
