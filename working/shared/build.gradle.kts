@@ -33,6 +33,8 @@ kotlin {
             val room_version = "2.8.4"
 
             implementation("androidx.room:room-runtime:$room_version")
+
+            implementation("co.touchlab:kermit:2.0.2")
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             

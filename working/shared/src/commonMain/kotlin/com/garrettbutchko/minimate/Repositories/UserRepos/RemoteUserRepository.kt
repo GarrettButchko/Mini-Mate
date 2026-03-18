@@ -9,7 +9,7 @@ import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.storage.storage
 import dev.gitlive.firebase.storage.Data
 
-class UserRepository {
+class RemoteUserRepository {
     private val db = Firebase.firestore
     private val auth = Firebase.auth
     private val storage = Firebase.storage
