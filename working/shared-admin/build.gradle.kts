@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -23,51 +22,29 @@ kotlin {
     iosTargets.forEach {
         it.binaries.framework {
             baseName = "shared"
+            export(projects.shared)
             isStatic = true
         }
     }
-    
-    jvm()
-    
+
     sourceSets {
         commonMain.dependencies {
-            val room_version = "2.8.4"
-            implementation("androidx.room:room-runtime:$room_version")
-            implementation("co.touchlab:kermit:2.0.2")
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.datetime)
-            
-            // Firebase Multiplatform
-            implementation(libs.firebase.common)
-            implementation(libs.firebase.firestore)
-            implementation(libs.firebase.auth)
-            implementation(libs.firebase.storage)
-
+            api(projects.shared)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
         }
-
         androidMain.dependencies {
-            implementation("com.google.android.libraries.places:places:4.1.0")
-            implementation("com.google.maps.android:maps-compose:6.12.0")
-            implementation(libs.compose.ui)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.activity.compose)
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
         }
     }
 }
 
 android {
-    namespace = "com.garrettbutchko.minimate.shared"
+    namespace = "com.garrettbutchko.minimate.shared.admin"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -75,8 +52,5 @@ android {
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-    buildFeatures {
-        compose = true
     }
 }
