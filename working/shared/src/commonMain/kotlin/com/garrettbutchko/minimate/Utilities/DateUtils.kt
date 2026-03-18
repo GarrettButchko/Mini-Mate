@@ -1,10 +1,13 @@
 package com.garrettbutchko.minimate.utilities
 
+import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.datetime.*
+import kotlin.time.Instant
+
 
 object DateUtils {
 
-    // ""2021-01-01" → "2020-W53" (Jan 1, 2021 is still in ISO week 53 of 2020)
+    // "2021-01-01" → "2020-W53" (Jan 1, 2021 is still in ISO week 53 of 2020)
     fun getIsoWeekID(dayID: String): String {
         val date = LocalDate.parse(dayID)
         
@@ -36,6 +39,18 @@ object DateUtils {
         // If we want Sunday = 1, Monday = 2, ..., Saturday = 7:
         val day = date.dayOfWeek.isoDayNumber // 1 (Mon) - 7 (Sun)
         return if (day == 7) 1 else day + 1
+    }
+
+    fun makeWeekID(timestamp: Timestamp = Timestamp.now()): String {
+        val date = Instant.fromEpochSeconds(timestamp.seconds, timestamp.nanoseconds.toLong())
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+        return getIsoWeekID(date.toString())
+    }
+
+    fun makeDayID(timestamp: Timestamp = Timestamp.now()): String {
+        val date = Instant.fromEpochSeconds(timestamp.seconds, timestamp.nanoseconds.toLong())
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+        return date.toString()
     }
 }
 
