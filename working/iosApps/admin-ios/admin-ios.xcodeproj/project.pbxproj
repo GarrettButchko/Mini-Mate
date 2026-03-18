@@ -72,7 +72,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 21B56BB32F64A63400DF589D /* Build configuration list for PBXNativeTarget "admin-ios" */;
 			buildPhases = (
-				21B56D662F64AE2E00DF589D /* ShellScript */,
+				21B56D662F64AE2E00DF589D /* Run Script */,
 				21B56BA42F64A63300DF589D /* Sources */,
 				21B56BA52F64A63300DF589D /* Frameworks */,
 				21B56BA62F64A63300DF589D /* Resources */,
@@ -145,7 +145,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		21B56D662F64AE2E00DF589D /* ShellScript */ = {
+		21B56D662F64AE2E00DF589D /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -155,6 +155,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Run Script";
 			outputFileListPaths = (
 			);
 			outputPaths = (

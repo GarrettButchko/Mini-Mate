@@ -2,7 +2,7 @@ package com.garrettbutchko.minimate.Repositories.GameRepos
 
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.Room.Dao.GameDao
-import com.garrettbutchko.minimate.database.Game
+import com.garrettbutchko.minimate.datamodels.Game
 
 class LocalGameRepository(private val gameDao: GameDao) {
 

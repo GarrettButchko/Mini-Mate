@@ -3,6 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -24,35 +26,38 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     jvm()
-    
+
     sourceSets {
         commonMain.dependencies {
-
             val room_version = "2.8.4"
-
             implementation("androidx.room:room-runtime:$room_version")
-
             implementation("co.touchlab:kermit:2.0.2")
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
-            
+
             // Firebase Multiplatform
             implementation(libs.firebase.common)
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.auth)
             implementation(libs.firebase.storage)
+
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
         }
 
-        val androidMain by getting {
-            dependencies {
-                implementation("com.google.android.libraries.places:places:4.1.0")
-                implementation("com.google.maps.android:maps-compose:6.12.0")
-                implementation(libs.compose.ui)
-                implementation(libs.compose.foundation)
-                implementation(libs.compose.material3)
-            }
+        androidMain.dependencies {
+            implementation("com.google.android.libraries.places:places:4.1.0")
+            implementation("com.google.maps.android:maps-compose:6.12.0")
+            implementation(libs.compose.ui)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.androidx.appcompat)
+            implementation(libs.androidx.activity.compose)
         }
 
         commonTest.dependencies {

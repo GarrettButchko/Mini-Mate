@@ -1,6 +1,6 @@
 package com.garrettbutchko.minimate.repositories
 
-import com.garrettbutchko.minimate.database.Game
+import com.garrettbutchko.minimate.datamodels.Game
 import com.garrettbutchko.minimate.datamodels.CourseEmail
 import com.garrettbutchko.minimate.datamodels.DailyDoc
 import com.garrettbutchko.minimate.datamodels.HoleAnalytics

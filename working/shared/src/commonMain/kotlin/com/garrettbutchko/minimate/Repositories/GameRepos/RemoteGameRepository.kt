@@ -1,6 +1,6 @@
 package com.garrettbutchko.minimate.repositories
 
-import com.garrettbutchko.minimate.database.Game
+import com.garrettbutchko.minimate.datamodels.Game
 import com.garrettbutchko.minimate.datamodels.GameDTO
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore

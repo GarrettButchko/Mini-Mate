@@ -1,7 +1,7 @@
 package com.garrettbutchko.minimate.Room.Dao
 
 import androidx.room.*
-import com.garrettbutchko.minimate.database.Game
+import com.garrettbutchko.minimate.datamodels.Game
 
 @Dao
 interface GameDao {

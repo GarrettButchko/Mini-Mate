@@ -14,6 +14,8 @@ firebaseKotlin = "2.4.0"
 googleServices = "4.4.4"
 junit = "4.13.2"
 kotlin = "2.3.0"
+ksp = "2.3.0-1.0.25"
+room = "2.6.1"
 kotlinx-serialization = "1.10.0"
 kotlinx-datetime = "0.7.1"
 ktor = "3.3.3"
@@ -59,3 +61,5 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+room = { id = "androidx.room", version.ref = "room" }

@@ -1,7 +1,7 @@
 package com.garrettbutchko.minimate.Repositories.UserRepos
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.database.Game
+import com.garrettbutchko.minimate.datamodels.Game
 import com.garrettbutchko.minimate.datamodels.User
 import com.garrettbutchko.minimate.repositories.RemoteUserRepository
 import dev.gitlive.firebase.firestore.Timestamp
@@ -12,8 +12,8 @@ import com.garrettbutchko.minimate.Enums.SignInMethod
 import dev.gitlive.firebase.storage.Data
 
 class UserRepository(
-    private val localRepo: LocalUserRepository,
-    private val remoteRepo: RemoteUserRepository // Ensure this uses suspend functions
+    val localRepo: LocalUserRepository,
+    val remoteRepo: RemoteUserRepository
 ) {
     private val log = Logger.withTag("UserRepository")
     private val repositoryScope = CoroutineScope(Dispatchers.Default + SupervisorJob())

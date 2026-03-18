@@ -7,6 +7,8 @@ import dev.gitlive.firebase.firestore.Timestamp
 
 class LocalUserRepository(private val userDao: UserDao) {
 
+
+
     private val log = Logger.withTag("UserLocalRepo")
 
     /**

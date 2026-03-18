@@ -1,4 +1,4 @@
-package com.garrettbutchko.minimate.database
+package com.garrettbutchko.minimate.datamodels
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
