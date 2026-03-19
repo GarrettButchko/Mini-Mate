@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.repositories.gameRepos
 
+import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.Game
 import com.garrettbutchko.minimate.datamodels.GameDTO
 import dev.gitlive.firebase.Firebase
@@ -14,13 +15,15 @@ class RemoteGameRepository {
     private val db = Firebase.firestore
     private val collectionName = "games"
 
+    private val log = Logger.withTag("RemoteGameRepo")
+
     // Save or update a game in Firestore
     suspend fun save(game: Game): Result<Boolean> {
         return try {
             db.collection(collectionName).document(game.id).set(game.toDTO(), merge = true)
             Result.success(true)
         } catch (e: Exception) {
-            print("❌ Firestore save error: ${e.message}")
+            log.e(e) { "❌ Firestore save error: ${e.message}" }
             Result.failure(e)
         }
     }
@@ -36,7 +39,7 @@ class RemoteGameRepository {
             }.awaitAll()
             Result.success(true)
         } catch (e: Exception) {
-            print("❌ Firestore save error: ${e.message}")
+            log.e(e) { "❌ Firestore save error: ${e.message}" }
             Result.failure(e)
         }
     }
@@ -51,7 +54,7 @@ class RemoteGameRepository {
                 null
             }
         } catch (e: Exception) {
-            print("❌ Firestore fetch error: ${e.message}")
+            log.e(e) { "❌ Firestore fetch error: ${e.message}" }
             null
         }
     }
@@ -77,7 +80,7 @@ class RemoteGameRepository {
             val gameMap = results.associateBy { it.id }
             ids.mapNotNull { gameMap[it] }
         } catch (e: Exception) {
-            print("❌ Firestore fetchAll error: ${e.message}")
+            log.e(e) { "❌ Firestore fetchAll error: ${e.message}" }
             emptyList()
         }
     }
@@ -88,7 +91,7 @@ class RemoteGameRepository {
             db.collection(collectionName).document(id).delete()
             Result.success(true)
         } catch (e: Exception) {
-            print("❌ Firestore delete error: ${e.message}")
+            log.e(e) { "❌ Firestore delete error: ${e.message}" }
             Result.failure(e)
         }
     }
@@ -105,7 +108,7 @@ class RemoteGameRepository {
             batch.commit()
             Result.success(true)
         } catch (e: Exception) {
-            print("❌ Firestore batch delete error: ${e.message}")
+            log.e(e) { "❌ Firestore batch delete error: ${e.message}" }
             Result.failure(e)
         }
     }

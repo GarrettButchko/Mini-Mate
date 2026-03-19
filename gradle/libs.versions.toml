@@ -66,6 +66,7 @@ firebase-common = { module = "dev.gitlive:firebase-common", version.ref = "fireb
 firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebaseKotlin" }
 firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebaseKotlin" }
 firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "firebaseKotlin" }
+firebase-database = { module = "dev.gitlive:firebase-database", version.ref = "firebaseKotlin" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-compiler = { module = "io.insert-koin:koin-compiler", version.ref = "koin" }
 

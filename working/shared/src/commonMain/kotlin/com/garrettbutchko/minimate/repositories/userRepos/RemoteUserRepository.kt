@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.repositories.userRepos
 
+import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.User
 import com.garrettbutchko.minimate.datamodels.UserDTO
 import dev.gitlive.firebase.Firebase
@@ -15,6 +16,8 @@ class RemoteUserRepository {
     private val storage = Firebase.storage
     private val usersCollection = db.collection("users")
 
+    private val log = Logger.withTag("RemoteUserRepo")
+
     suspend fun fetch(id: String): User? {
         return try {
             val snapshot = usersCollection.document(id).get()
@@ -24,7 +27,7 @@ class RemoteUserRepository {
                 null
             }
         } catch (e: Exception) {
-            println("❌ Firestore fetch error: ${e.message}")
+            log.e(e) { "❌ Firestore fetch error: ${e.message}" }
             null
         }
     }
@@ -39,7 +42,7 @@ class RemoteUserRepository {
             usersCollection.document(user.googleId).set(updatedUser.toDTO(), merge = true)
             Result.success(true)
         } catch (e: Exception) {
-            println("❌ Firestore save error: ${e.message}")
+            log.e(e) { "❌ Firestore save error: ${e.message}" }
             Result.failure(e)
         }
     }
@@ -49,13 +52,13 @@ class RemoteUserRepository {
             val ref = usersCollection.document(id)
             val snapshot = ref.get()
             if (!snapshot.exists) {
-                println("⚠️ User doc does not exist")
+                log.w { "⚠️ User doc does not exist" }
                 return Result.success(true)
             }
             ref.delete()
             Result.success(true)
         } catch (e: Exception) {
-            println("❌ Firestore delete error: ${e.message}")
+            log.e(e) { "❌ Firestore delete error: ${e.message}" }
             Result.failure(e)
         }
     }
@@ -78,11 +81,12 @@ class RemoteUserRepository {
                 // In GitLive Firebase SDK, updateProfile uses photoUrl (String)
                 currentUser.updateProfile(photoUrl = url)
             } catch (e: Exception) {
-                println("⚠️ Failed to set Auth photoURL: ${e.message}")
+                log.e(e) { "⚠️ Failed to set Auth photoURL: ${e.message}" }
             }
 
             Result.success(url)
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to upload profile photo: ${e.message}" }
             Result.failure(e)
         }
     }

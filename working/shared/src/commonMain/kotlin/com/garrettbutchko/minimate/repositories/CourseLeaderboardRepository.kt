@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.repositories
 
+import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.LeaderboardEntry
 import com.garrettbutchko.minimate.datamodels.Player
 import dev.gitlive.firebase.Firebase
@@ -17,6 +18,8 @@ class CourseLeaderboardRepository {
 
     // MARK: - Internal References
 
+    private val log = Logger.withTag("CourseLeaderboardRepo")
+
     private fun allTimeEntriesRef(courseID: String): CollectionReference {
         return db.collection("courses").document(courseID)
             .collection("allTimeLeaderboard")
@@ -32,6 +35,7 @@ class CourseLeaderboardRepository {
                 .get()
             snapshot.documents.map { it.data() }
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to fetch top all time leaderboard for course: $courseID" }
             emptyList()
         }
     }
@@ -72,6 +76,7 @@ class CourseLeaderboardRepository {
             }
             Result.success(true)
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to submit score for course: $courseID, player: ${player.id}" }
             Result.failure(e)
         }
     }
@@ -83,6 +88,7 @@ class CourseLeaderboardRepository {
             allTimeEntriesRef(courseID).document(playerID).delete()
             Result.success(true)
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to delete entry for course: $courseID, player: $playerID" }
             Result.failure(e)
         }
     }
@@ -106,6 +112,7 @@ class CourseLeaderboardRepository {
 
             Result.success(true)
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to delete all entries for course: $courseID" }
             Result.failure(e)
         }
     }

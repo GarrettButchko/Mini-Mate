@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.repositories
 
+import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.Course
 import com.garrettbutchko.minimate.datamodels.MapItemDTO
 import com.garrettbutchko.minimate.dataModels.courseModels.SmallCourse
@@ -23,6 +24,8 @@ class CourseRepository {
     private val storage = Firebase.storage
     private val collectionName = "courses"
 
+    private val log = Logger.withTag("CourseRepo")
+
     // MARK: General Course
     suspend fun addOrUpdateCourse(course: Course): Result<Boolean> {
         val ref = db.collection(collectionName).document(course.id)
@@ -34,7 +37,7 @@ class CourseRepository {
             ref.set(course, merge = true)
             Result.success(true)
         } catch (e: Exception) {
-            print("❌ Firestore encoding error:" + e.message)
+            log.e(e) { "❌ Firestore encoding error:" + e.message }
             Result.failure(e)
         }
     }
@@ -50,6 +53,7 @@ class CourseRepository {
 
             Result.success(true)
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to delete course item: " + e.message }
             Result.failure(e)
         }
     }
@@ -63,6 +67,7 @@ class CourseRepository {
             }
             Result.success(true)
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to set course item: " + e.message }
             Result.failure(e)
         }
     }
@@ -83,6 +88,7 @@ class CourseRepository {
                 mapItem?.let { createCourseWithMapItem(id, it) }
             }
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to fetch course: " + e.message }
             null
         }
     }
@@ -101,7 +107,7 @@ class CourseRepository {
                 .get()
                 .documents.firstOrNull()?.data()
         } catch (e: Exception) {
-            print("❌ Firestore query error:" + e.message)
+            log.e(e) { "❌ Firestore query error:" + e.message }
             null
         }
     }
@@ -119,7 +125,7 @@ class CourseRepository {
                 .get()
             !snapshot.documents.isEmpty()
         } catch (e: Exception) {
-            print("❌ Firestore query error:" + e.message)
+            log.e(e) { "❌ Firestore query error:" + e.message }
             false
         }
     }
@@ -135,10 +141,10 @@ class CourseRepository {
         )
         return try {
             ref.set(newCourse)
-            print("Created new course:" + courseID)
+            log.i { "Created new course:$courseID" }
             newCourse
         } catch (e: Exception) {
-            print("❌ Firestore write error:" + e.message)
+            log.e(e) { "❌ Firestore write error:" + e.message }
             null
         }
     }
@@ -151,7 +157,7 @@ class CourseRepository {
                 .get()
                 .documents.firstOrNull()?.id
         } catch (e: Exception) {
-            print("❌ Firestore query error:" + e.message)
+            log.e(e) { "❌ Firestore query error:" + e.message }
             null
         }
     }
@@ -173,6 +179,7 @@ class CourseRepository {
                     SmallCourse(id = doc.id, name = name)
                 }
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to fetch course IDs: " + e.message }
             emptyList()
         }
     }
@@ -182,13 +189,13 @@ class CourseRepository {
     // MARK: Email
     suspend fun removeEmail(email: String, courseID: String): Boolean {
         val key = emailKey(email)
-        return try {
+        try {
             db.collection(collectionName).document(courseID).updateFields {
                 "emails.$key" to delete
             }
             return true
         } catch (e: Exception) {
-            print("❌ Failed to remove email:" + e.message)
+            log.e(e) { "❌ Failed to remove email:" + e.message }
             return false
         }
     }
@@ -196,21 +203,21 @@ class CourseRepository {
 
     // MARK: Admin Id
     suspend fun addAdminIDtoCourse(adminID: String, courseID: String): Boolean {
-        return try {
+        try {
             db.collection(collectionName).document(courseID).updateFields {
                 "adminIDs" to FieldValue.arrayUnion(adminID)
                 "isClaimed" to true
             }
             return true
         } catch (e: Exception) {
-            print("❌ Failed to add email:" + e.message)
+            log.e(e) { "❌ Failed to add admin ID:" + e.message }
             return false
         }
     }
 
     suspend fun removeAdminIDfromCourse(email: String, courseID: String): Boolean {
         val ref = db.collection(collectionName).document(courseID)
-        return try {
+        try {
             ref.updateFields {
                 "adminIDs" to FieldValue.arrayRemove(email)
             }
@@ -221,16 +228,18 @@ class CourseRepository {
             }
             return true
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to remove admin ID:" + e.message }
             return false
         }
     }
 
     suspend fun uploadCourseImage(id: String, imageData: Data, key: String): String? {
         val ref = storage.reference.child(id).child("$key.png")
-        return try {
+        try {
             ref.putData(imageData)
             return ref.getDownloadUrl()
         } catch (e: Exception) {
+            log.e(e) { "❌ Failed to upload course image:" + e.message }
             return null
         }
     }
