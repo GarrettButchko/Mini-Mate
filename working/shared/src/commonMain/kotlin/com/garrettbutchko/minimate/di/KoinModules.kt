@@ -1,14 +1,15 @@
 package com.garrettbutchko.minimate.di
 
-import com.garrettbutchko.minimate.Repositories.GameRepos.LocalGameRepository
+
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-import com.garrettbutchko.minimate.Repositories.UserRepos.LocalUserRepository
-import com.garrettbutchko.minimate.Repositories.UserRepos.RemoteUserRepository
-import com.garrettbutchko.minimate.Repositories.UserRepos.UserRepository
-import com.garrettbutchko.minimate.Room.AppDatabase
-import com.garrettbutchko.minimate.repositories.RemoteGameRepository
+import com.garrettbutchko.minimate.repositories.userRepos.LocalUserRepository
+import com.garrettbutchko.minimate.repositories.userRepos.RemoteUserRepository
+import com.garrettbutchko.minimate.repositories.userRepos.UserRepository
+import com.garrettbutchko.minimate.room.AppDatabase
+import com.garrettbutchko.minimate.repositories.gameRepos.LocalGameRepository
+import com.garrettbutchko.minimate.repositories.gameRepos.RemoteGameRepository
 
 val sharedModule = module {
     single { get<AppDatabase>().userDao() }

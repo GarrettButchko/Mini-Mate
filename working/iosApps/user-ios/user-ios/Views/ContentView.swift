@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
-import shared
+import shared_user
+import Combine
+
 
 struct ContentView: View {
-    let greeting = shared.Greeting()
+    let greeting = Greeting()
 
-    let course = shared.Course(
+    // let userRepo = UnifiedGameRepository(localGameRepo: LocalGameRepository(), remoteGameRepo: RemoteGameRepository())
+
+    let course = Course(
         id: "course_001",
         name: "Sunset Valley",
         password: "secure",
@@ -21,7 +25,7 @@ struct ContentView: View {
         customPar: false,
         numHoles: 18,
         pars: [],
-        socialLinks: [shared.SocialLink(id: "blah blah", platform: .facebook, url: "url here")], // Kotlin List becomes Swift Array
+        socialLinks: [SocialLink(id: "blah blah", platform: .facebook, url: "url here")], // Kotlin List becomes Swift Array
         latitude: 34.05,
         longitude: -118.24,
         isSeasonal: nil,
@@ -41,7 +45,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            Text("User: \(course.id)")
+            Text("User: \(greeting.greet())")
 
             course.socialLinks.first?.platformImage
                 .resizable()
@@ -49,8 +53,4 @@ struct ContentView: View {
         }
         .padding()
     }
-}
-
-#Preview {
-    ContentView()
 }

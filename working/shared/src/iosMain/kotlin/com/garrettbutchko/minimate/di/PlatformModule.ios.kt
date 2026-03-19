@@ -1,8 +1,8 @@
 package com.garrettbutchko.minimate.di
 import androidx.room.Room
-import com.garrettbutchko.minimate.Room.AppDatabase
-import com.garrettbutchko.minimate.Room.AppDatabaseConstructor
-import com.garrettbutchko.minimate.Room.getRoomDatabase
+import com.garrettbutchko.minimate.room.AppDatabase
+import com.garrettbutchko.minimate.room.AppDatabaseConstructor
+import com.garrettbutchko.minimate.room.getRoomDatabase
 import platform.Foundation.NSHomeDirectory
 import org.koin.core.module.Module
 import org.koin.dsl.module

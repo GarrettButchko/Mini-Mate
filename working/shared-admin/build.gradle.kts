@@ -13,7 +13,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -32,9 +32,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+
+            implementation(projects.shared)
             api(projects.shared)
-            val room_version = "2.8.4"
-            implementation("androidx.room:room-runtime:$room_version")
+            implementation(libs.androidx.room.runtime)
             implementation("co.touchlab:kermit:2.0.2")
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
@@ -57,7 +58,7 @@ kotlin {
 
 
             implementation(project.dependencies.platform(libs.koin.bom))
-            implementation("io.insert-koin:koin-core")
+            implementation(libs.insert.koin.koin.core)
         }
 
         androidMain.dependencies {
@@ -68,12 +69,12 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.activity.compose)
-            implementation("io.insert-koin:koin-android")
+            implementation(libs.insert.koin.koin.android)
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation("io.insert-koin:koin-test")
+            implementation(libs.insert.koin.koin.test)
         }
     }
 }
@@ -82,8 +83,8 @@ android {
     namespace = "com.garrettbutchko.minimate.shared_admin"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()

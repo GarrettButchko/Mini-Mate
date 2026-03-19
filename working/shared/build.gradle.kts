@@ -13,7 +13,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -45,8 +45,8 @@ kotlin {
             implementation(libs.compose.components.resources)
 
 
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation("io.insert-koin:koin-core")
+            api(project.dependencies.platform(libs.koin.bom))
+            api("io.insert-koin:koin-core")
         }
 
         androidMain.dependencies {
@@ -57,12 +57,12 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.activity.compose)
-            implementation("io.insert-koin:koin-android")
+            api("io.insert-koin:koin-android")
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation("io.insert-koin:koin-test")
+            implementation(libs.io.insert.koin.koin.test)
         }
     }
 }
@@ -71,8 +71,8 @@ android {
     namespace = "com.garrettbutchko.minimate.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
