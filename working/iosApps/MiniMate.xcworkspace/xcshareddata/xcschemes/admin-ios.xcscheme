@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "21B56BA72F64A63300DF589D"
+               BlueprintIdentifier = "2102E2162F6C67A500F971E4"
                BuildableName = "admin-ios.app"
                BlueprintName = "admin-ios"
                ReferencedContainer = "container:admin-ios/admin-ios.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "21B56BA72F64A63300DF589D"
+            BlueprintIdentifier = "2102E2162F6C67A500F971E4"
             BuildableName = "admin-ios.app"
             BlueprintName = "admin-ios"
             ReferencedContainer = "container:admin-ios/admin-ios.xcodeproj">

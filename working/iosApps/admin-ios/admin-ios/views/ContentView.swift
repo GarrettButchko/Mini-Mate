@@ -1,7 +1,13 @@
 //
 //  ContentView.swift
 //  admin-ios
+//
+//  Created by Garrett Butchko on 3/19/26.
+//
 
+//
+//  ContentView.swift
+//  user-ios
 //
 //  Created by Garrett Butchko on 3/13/26.
 //
@@ -10,11 +16,12 @@ import SwiftUI
 import shared_admin
 import Combine
 
+
 struct ContentView: View {
     let greeting = Greeting()
 
     // let userRepo = UnifiedGameRepository(localGameRepo: LocalGameRepository(), remoteGameRepo: RemoteGameRepository())
-    
+
     let course = Course(
         id: "course_001",
         name: "Sunset Valley",
@@ -46,7 +53,7 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Text("Admin: \(greeting.greet())")
-            
+
             course.socialLinks.first?.platformImage
                 .resizable()
                 .frame(width: 40, height: 40)

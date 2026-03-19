@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -6,7 +7,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
-    id("co.touchlab.skie") version "0.10.10"
     alias(libs.plugins.ksp)
 }
 
@@ -21,9 +21,9 @@ kotlin {
     iosSimulatorArm64()
 
     sourceSets {
+
         commonMain.dependencies {
-            val room_version = "2.8.4"
-            implementation("androidx.room:room-runtime:$room_version")
+            implementation(libs.androidx.room.runtime)
             implementation("co.touchlab:kermit:2.0.2")
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)

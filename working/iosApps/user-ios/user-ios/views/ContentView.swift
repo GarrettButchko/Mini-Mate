@@ -45,7 +45,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            Text("User: \(greeting.greet())")
+            Text("User 2: \(greeting.greet())")
 
             course.socialLinks.first?.platformImage
                 .resizable()

@@ -5,7 +5,6 @@
 import Foundation
 import SwiftUI
 
-
 extension String {
     func toColor() -> Color? {
         let lowercased = self.lowercased()

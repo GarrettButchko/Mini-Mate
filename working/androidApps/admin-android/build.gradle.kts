@@ -30,7 +30,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
-            implementation(projects.sharedAdmin)
+            implementation(projects.sharedUser)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -67,8 +67,8 @@ android {
 
 dependencies {
     implementation(projects.shared)
-    implementation(projects.sharedAdmin)
+    implementation(projects.sharedUser)
     debugImplementation(libs.compose.uiTooling)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
+    implementation(libs.google.firebase.analytics)
 }

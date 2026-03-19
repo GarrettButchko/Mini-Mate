@@ -22,19 +22,21 @@ kotlin {
         iosSimulatorArm64(),
     )
 
+
     iosTargets.forEach {
         it.binaries.framework {
             baseName = "shared_admin"
             isStatic = true
+            val bundleId = "com.garrettbutchko.minimate.admin"
+            freeCompilerArgs += "-Xbinary=bundleId=$bundleId"
             export(projects.shared)
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-
-            implementation(projects.shared)
             api(projects.shared)
+
             implementation(libs.androidx.room.runtime)
             implementation("co.touchlab:kermit:2.0.2")
             implementation(libs.kotlinx.serialization.json)
@@ -58,7 +60,7 @@ kotlin {
 
 
             implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.insert.koin.koin.core)
+            implementation(libs.koin.core)
         }
 
         androidMain.dependencies {
@@ -69,12 +71,12 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.insert.koin.koin.android)
+            implementation(libs.koin.android)
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation(libs.insert.koin.koin.test)
+            implementation(libs.koin.test)
         }
     }
 }

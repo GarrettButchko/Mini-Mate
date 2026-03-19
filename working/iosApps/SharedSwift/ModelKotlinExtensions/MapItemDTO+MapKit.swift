@@ -76,16 +76,26 @@ extension MKMapItem {
     func toCourse(isSupported: Bool = false) -> Course {
         let dto = self.toDTO()
 
-        // Use the new factory method to handle immutable 'id'
-        let course = Course.companion.create(
-            id: CourseIDGenerator.shared.generateCourseID(item: dto),
-            name: self.name ?? "",
-            password: PasswordGenerator.shared.generateStrong(length: 20, useSymbols: true),
-            latitude: self.placemark.coordinate.latitude,
-            longitude: self.placemark.coordinate.longitude,
-            isSupported: isSupported
-        )
-
-        return course
+        
+        if #available(iOS 26.0, *) {
+            return Course.companion.create(
+                id: CourseIDGenerator.shared.generateCourseID(item: dto),
+                name: self.name ?? "",
+                password: PasswordGenerator.shared.generateStrong(length: 20, useSymbols: true),
+                latitude: self.location.coordinate.latitude,
+                longitude: self.location.coordinate.longitude,
+                isSupported: isSupported
+            )
+        } else {
+            return Course.companion.create(
+                id: CourseIDGenerator.shared.generateCourseID(item: dto),
+                name: self.name ?? "",
+                password: PasswordGenerator.shared.generateStrong(length: 20, useSymbols: true),
+                latitude: self.placemark.coordinate.latitude,
+                longitude: self.placemark.coordinate.longitude,
+                isSupported: isSupported
+            )
+        }
+        
     }
 }

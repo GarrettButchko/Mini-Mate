@@ -22,18 +22,19 @@ kotlin {
         iosSimulatorArm64(),
     )
 
+
     iosTargets.forEach {
         it.binaries.framework {
             baseName = "shared_user"
             isStatic = true
+            val bundleId = "com.garrettbutchko.minimate.user"
+            freeCompilerArgs += "-Xbinary=bundleId=$bundleId"
             export(projects.shared)
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-
-            implementation(projects.shared)
             api(projects.shared)
 
             implementation(libs.androidx.room.runtime)

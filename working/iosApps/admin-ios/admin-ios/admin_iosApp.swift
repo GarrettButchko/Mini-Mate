@@ -2,7 +2,7 @@
 //  admin_iosApp.swift
 //  admin-ios
 //
-//  Created by Garrett Butchko on 3/13/26.
+//  Created by Garrett Butchko on 3/19/26.
 //
 
 import SwiftUI
@@ -11,20 +11,21 @@ import shared_admin
 
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-  func application(_ application: UIApplication,
-                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure()
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        FirebaseApp.configure()
 
-      startKoinIos()
+        startKoinIos()
 
-    return true
-  }
+        return true
+    }
 }
 
 @main
 struct admin_iosApp: App {
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
 
     var body: some Scene {
         WindowGroup {

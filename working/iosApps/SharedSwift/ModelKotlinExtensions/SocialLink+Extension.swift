@@ -4,12 +4,12 @@
 //
 //  Created by Garrett Butchko on 3/14/26.
 //
+import SwiftUI
 #if canImport(shared_user)
 import shared_user
 #elseif canImport(shared_admin)
 import shared_admin
 #endif
-import SwiftUI
 
 extension SocialLink {
     var platformImage: Image {
@@ -27,4 +27,4 @@ extension SocialLink {
         }
     }
 }
-    
+
