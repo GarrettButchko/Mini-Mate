@@ -6,7 +6,11 @@
 //
 
 import SwiftUI
-import shared
+#if canImport(shared_user)
+import shared_user
+#elseif canImport(shared_admin)
+import shared_admin
+#endif
 
 extension Course {
     var scoreCardColor: Color? {

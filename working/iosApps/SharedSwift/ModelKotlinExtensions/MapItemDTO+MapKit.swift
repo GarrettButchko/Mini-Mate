@@ -7,7 +7,11 @@
 
 import MapKit
 import Contacts
-import shared
+#if canImport(shared_user)
+import shared_user
+#elseif canImport(shared_admin)
+import shared_admin
+#endif
 
 extension MKMapItem {
     var idString: String {

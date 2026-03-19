@@ -4,7 +4,11 @@
 //
 //  Created by Garrett Butchko on 3/14/26.
 //
-import shared
+#if canImport(shared_user)
+import shared_user
+#elseif canImport(shared_admin)
+import shared_admin
+#endif
 import SwiftUI
 
 extension SocialLink {
@@ -19,8 +23,6 @@ extension SocialLink {
         case .youtube:
             return Image("youtube")
         case .website:
-            return Image(systemName: "globe")
-        default:
             return Image(systemName: "globe")
         }
     }

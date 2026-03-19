@@ -1,4 +1,4 @@
-package com.garrettbutchko.minimate.repositories
+package com.garrettbutchko.minimate.Repositories.UserRepos
 
 import com.garrettbutchko.minimate.datamodels.User
 import com.garrettbutchko.minimate.datamodels.UserDTO

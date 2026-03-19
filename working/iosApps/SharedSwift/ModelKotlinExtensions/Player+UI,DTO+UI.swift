@@ -5,7 +5,11 @@
 //  Created by Garrett Butchko on 3/8/26.
 //
 import SwiftUI
-import shared
+#if canImport(shared_user)
+import shared_user
+#elseif canImport(shared_admin)
+import shared_admin
+#endif
 
 extension Player {
     var ballColor: Color {
@@ -18,5 +22,3 @@ extension PlayerDTO {
         ballColorDT?.toColor() ?? .mainOpp
     }
 }
-
-

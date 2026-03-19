@@ -3,7 +3,7 @@ package com.garrettbutchko.minimate.Repositories.UserRepos
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.Game
 import com.garrettbutchko.minimate.datamodels.User
-import com.garrettbutchko.minimate.repositories.RemoteUserRepository
+import com.garrettbutchko.minimate.Repositories.UserRepos.RemoteUserRepository
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.coroutines.*
 import kotlin.math.abs

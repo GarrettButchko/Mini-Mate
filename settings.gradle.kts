@@ -31,8 +31,10 @@ dependencyResolutionManagement {
     }
 }
 
-include(":shared", ":admin-android", ":user-android")
+include(":shared", ":shared-admin", ":shared-user", ":admin-android", ":user-android")
 
 project(":shared").projectDir = file("working/shared")
+project(":shared-admin").projectDir = file("working/shared-admin")
+project(":shared-user").projectDir = file("working/shared-user")
 project(":admin-android").projectDir = file("working/androidApps/admin-android")
 project(":user-android").projectDir = file("working/androidApps/user-android")

@@ -17,11 +17,22 @@ kotlin {
         }
     }
 
-    iosArm64()
-    iosSimulatorArm64()
+    val iosTargets = listOf(
+        iosArm64(),
+        iosSimulatorArm64(),
+    )
+
+    iosTargets.forEach {
+        it.binaries.framework {
+            baseName = "shared_user"
+            isStatic = true
+            export(projects.shared)
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
+            api(projects.shared)
             val room_version = "2.8.4"
             implementation("androidx.room:room-runtime:$room_version")
             implementation("co.touchlab:kermit:2.0.2")
@@ -68,7 +79,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.garrettbutchko.minimate.shared"
+    namespace = "com.garrettbutchko.minimate.shared_user"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
