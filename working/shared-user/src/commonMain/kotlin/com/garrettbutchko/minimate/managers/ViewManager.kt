@@ -25,6 +25,10 @@ class ViewManager : AppNavigationManaging {
     val currentView: StateFlow<ViewType> = _currentView.asStateFlow()
     private val scope = CoroutineScope(Dispatchers.Main)
 
+    fun setCurrentView(view: ViewType) {
+        _currentView.value = view
+    }
+
     init {
         val currentUser = Firebase.auth.currentUser
         if (currentUser != null && currentUser.isEmailVerified) {
@@ -45,7 +49,7 @@ class ViewManager : AppNavigationManaging {
         _currentView.value = ViewType.Main(tab)
     }
 
-    fun navigateToSignIn() {
+    override fun navigateToSignIn() {
         _currentView.value = ViewType.SignIn
     }
 

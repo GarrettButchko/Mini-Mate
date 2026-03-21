@@ -60,7 +60,7 @@ class ProfileViewModelSwift: ObservableObject {
     init() {
         // Assuming your KoinHelper has a getter for ProfileViewModel
         
-        self.kotlinVM = KoinHelper.shared.getProfileViewModel()
+        self.kotlinVM = KoinHelperParent.shared.getProfileViewModel()
         setupObservations()
     }
 
@@ -101,35 +101,5 @@ class ProfileViewModelSwift: ObservableObject {
                 self._activeDeleteAlert = value
             }
         }
-    }
-
-    // 4. Mirroring the Logic Functions
-    
-    func saveName() {
-        kotlinVM.saveName()
-    }
-
-    func logOut() {
-        kotlinVM.logOut()
-    }
-
-    func deleteAccount(userModel: UserModel) {
-        kotlinVM.deleteAccount(userModel: userModel)
-    }
-
-    func passwordReset(userModel: UserModel) {
-        kotlinVM.passwordReset(userModel: userModel)
-    }
-
-    func googleReauthAndDelete(onSheetPresentChange: @escaping (Bool) -> Void) {
-        kotlinVM.googleReauthAndDelete(onSheetPresentChange: { value in
-            onSheetPresentChange(value.boolValue)
-        })
-    }
-
-    func emailReauthAndDelete(emailInput: String, passwordInput: String, onSheetPresentChange: @escaping (Bool) -> Void) {
-        kotlinVM.emailReauthAndDelete(emailInput: emailInput, passwordInput: passwordInput, onSheetPresentChange: { value in
-            onSheetPresentChange(value.boolValue)
-        })
     }
 }

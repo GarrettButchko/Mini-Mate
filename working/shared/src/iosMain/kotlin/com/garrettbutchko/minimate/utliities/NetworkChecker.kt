@@ -1,4 +1,4 @@
-package com.garrettbutchko.minimate.utliities
+package com.garrettbutchko.minimate.utilities
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Network.nw_path_get_status
@@ -11,9 +11,9 @@ import platform.Network.nw_path_t
 import platform.darwin.dispatch_queue_create
 
 @OptIn(ExperimentalForeignApi::class)
-class NetworkChecker private constructor() {
+actual class NetworkChecker private constructor() {
 
-    var isConnected: Boolean = false
+    actual var isConnected: Boolean = false
         private set
 
     private val monitor = nw_path_monitor_create()
@@ -37,7 +37,7 @@ class NetworkChecker private constructor() {
         nw_path_monitor_start(monitor)
     }
 
-    companion object {
-        val shared = NetworkChecker()
+    actual companion object {
+        actual val shared = NetworkChecker()
     }
 }

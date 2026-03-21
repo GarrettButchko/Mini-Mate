@@ -1,11 +1,14 @@
-@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
+@file:OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 
-package com.garrettbutchko.minimate.viewModels
+package com.garrettbutchko.minimate.viewModelsiOSAddOns
 
 import com.garrettbutchko.minimate.utilities.randomNonceString
 import com.garrettbutchko.minimate.utilities.shortHash
+import com.garrettbutchko.minimate.viewModels.AuthViewModel
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.OAuthProvider
+import kotlinx.cinterop.BetaInteropApi
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.launch
 import platform.AuthenticationServices.*
 import platform.Foundation.NSString

@@ -7,9 +7,9 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.util.Log
 
-class NetworkChecker private constructor(context: Context) {
+actual class NetworkChecker private constructor(context: Context) {
 
-    var isConnected: Boolean = false
+    actual var isConnected: Boolean = false
         private set
 
     init {
@@ -49,7 +49,7 @@ class NetworkChecker private constructor(context: Context) {
                       capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
-    companion object {
+    actual companion object {
         @Volatile
         private var instance: NetworkChecker? = null
 
@@ -58,5 +58,11 @@ class NetworkChecker private constructor(context: Context) {
                 instance ?: NetworkChecker(context.applicationContext).also { instance = it }
             }
         }
+        
+        // Mock fallback for common platform requirement 
+        // Note: For Android 'shared' isn't as trivial due to Context requirement, 
+        // you should have previously called getInstance(context)
+        actual val shared: NetworkChecker
+            get() = instance ?: error("NetworkChecker must be initialized via getInstance(context) first on Android.")
     }
 }

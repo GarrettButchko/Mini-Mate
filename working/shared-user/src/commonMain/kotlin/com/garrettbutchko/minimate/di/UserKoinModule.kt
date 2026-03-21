@@ -5,6 +5,7 @@ import org.koin.dsl.module
 import com.garrettbutchko.minimate.repositories.UnifiedGameRepository
 import com.garrettbutchko.minimate.managers.ViewManager
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
+import com.garrettbutchko.minimate.utilities.NetworkChecker
 
 val sharedUserModule = module {
     // It can safely call get() for LocalGameRepository and RemoteGameRepository

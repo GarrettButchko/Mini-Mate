@@ -1,6 +1,6 @@
-@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
+@file:OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 
-package com.garrettbutchko.minimate.viewModels
+package com.garrettbutchko.minimate.viewModelsiOSAddOns
 
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.UserModel
@@ -16,6 +16,9 @@ import platform.Foundation.create
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import com.garrettbutchko.minimate.auth.AppleReauthCoordinator
+import com.garrettbutchko.minimate.viewModels.ProfileViewModel
+import kotlinx.cinterop.BetaInteropApi
+import kotlinx.cinterop.ExperimentalForeignApi
 
 private var activeReauthCoordinator: AppleReauthCoordinator? = null
 private var currentNonce: String? = null
