@@ -1,7 +1,7 @@
 package com.garrettbutchko.minimate.repositories.userRepos
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.datamodels.Game
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.datamodels.UserModel
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.coroutines.*

@@ -1,10 +1,10 @@
 package com.garrettbutchko.minimate.modelKotlinExtensions
 
+import com.garrettbutchko.minimate.dataModels.AddressDTO
+import com.garrettbutchko.minimate.dataModels.CoordinateDTO
+import com.garrettbutchko.minimate.dataModels.MapItemDTO
 import com.google.android.libraries.places.api.model.Place
-import com.garrettbutchko.minimate.datamodels.MapItemDTO
-import com.garrettbutchko.minimate.datamodels.CoordinateDTO
-import com.garrettbutchko.minimate.datamodels.AddressDTO
-import com.garrettbutchko.minimate.datamodels.Course
+import com.garrettbutchko.minimate.dataModels.courseModels.Course
 import com.garrettbutchko.minimate.utilities.CourseIDGenerator
 import com.garrettbutchko.minimate.utilities.PasswordGenerator
 
@@ -22,7 +22,8 @@ fun Place.idString(): String {
 
 fun Place.toDTO(): MapItemDTO {
     return MapItemDTO(
-        name = this.resourceName, // Returns String?
+        placeID = this.id,
+        name = this.displayName, // Returns String?
         phoneNumber = this.nationalPhoneNumber, // Returns String?
         url = this.websiteUri?.toString(), // Converts Android Uri? to String?
         address = AddressDTO(
@@ -39,7 +40,7 @@ fun Place.toDTO(): MapItemDTO {
 fun Place.toCourse(isSupported: Boolean): Course {
     return Course(
         id = CourseIDGenerator.generateCourseID(this.toDTO()),
-        name = this.resourceName ?: "",
+        name = this.displayName ?: "",
         password = PasswordGenerator.generate(PasswordGenerator.Style.Strong()),
         latitude = this.location?.latitude ?: 0.0,
         longitude = this.location?.longitude ?: 0.0,

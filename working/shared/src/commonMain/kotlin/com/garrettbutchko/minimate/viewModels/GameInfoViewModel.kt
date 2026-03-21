@@ -1,6 +1,6 @@
 package com.garrettbutchko.minimate.viewModels
 
-import com.garrettbutchko.minimate.datamodels.Game
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant

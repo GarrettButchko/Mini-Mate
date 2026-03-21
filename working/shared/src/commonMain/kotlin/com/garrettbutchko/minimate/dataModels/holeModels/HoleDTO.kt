@@ -1,7 +1,5 @@
 package com.garrettbutchko.minimate.dataModels.holeModels
 
-import com.garrettbutchko.minimate.datamodels.Hole
-
 import kotlinx.serialization.Serializable
 
 @Serializable

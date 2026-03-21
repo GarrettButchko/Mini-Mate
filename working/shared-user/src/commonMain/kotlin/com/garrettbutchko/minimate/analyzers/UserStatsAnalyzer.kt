@@ -1,8 +1,8 @@
 package com.garrettbutchko.minimate.analyzers
 
-import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.Hole
-import com.garrettbutchko.minimate.datamodels.Player
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
+import com.garrettbutchko.minimate.dataModels.holeModels.Hole
+import com.garrettbutchko.minimate.dataModels.playerModels.Player
 import com.garrettbutchko.minimate.datamodels.UserModel
 import com.garrettbutchko.minimate.extensions.toInstant
 import kotlin.math.round

@@ -1,8 +1,8 @@
 package com.garrettbutchko.minimate.repositories.gameRepos
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.GameDTO
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
+import com.garrettbutchko.minimate.dataModels.gameModels.GameDTO
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.FieldPath

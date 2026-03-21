@@ -1,7 +1,7 @@
 package com.garrettbutchko.minimate.viewModels
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.datamodels.Game
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.datamodels.UserModel
 import com.garrettbutchko.minimate.repositories.FirebaseAuthRepository
 import com.garrettbutchko.minimate.repositories.userRepos.UserRepository

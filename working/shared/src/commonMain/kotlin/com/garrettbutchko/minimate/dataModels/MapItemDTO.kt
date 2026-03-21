@@ -1,9 +1,10 @@
-package com.garrettbutchko.minimate.datamodels
+package com.garrettbutchko.minimate.dataModels
 
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class MapItemDTO(
+    val placeID: String? = null,
     val name: String?,
     val phoneNumber: String?,
     val url: String?,

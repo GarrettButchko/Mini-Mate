@@ -1,8 +1,8 @@
 package com.garrettbutchko.minimate.viewModels
 
-import com.garrettbutchko.minimate.datamodels.Course
-import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.Hole
+import com.garrettbutchko.minimate.dataModels.courseModels.Course
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
+import com.garrettbutchko.minimate.dataModels.holeModels.Hole
 import com.garrettbutchko.minimate.repositories.CourseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

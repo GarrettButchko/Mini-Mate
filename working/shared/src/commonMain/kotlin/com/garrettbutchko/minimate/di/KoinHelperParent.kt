@@ -1,6 +1,6 @@
 package com.garrettbutchko.minimate.di
 
-import com.garrettbutchko.minimate.datamodels.Game
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
 import com.garrettbutchko.minimate.viewModels.AuthViewModel
 import com.garrettbutchko.minimate.viewModels.GameReviewViewModel

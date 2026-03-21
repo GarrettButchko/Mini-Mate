@@ -1,7 +1,6 @@
-package com.garrettbutchko.minimate.datamodels
+package com.garrettbutchko.minimate.dataModels.holeModels
 
 import com.garrettbutchko.minimate.generateUUID // Assuming you have a helper for this
-import com.garrettbutchko.minimate.dataModels.holeModels.HoleDTO
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

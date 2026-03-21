@@ -1,16 +1,14 @@
 package com.garrettbutchko.minimate.repositories
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.datamodels.LeaderboardEntry
-import com.garrettbutchko.minimate.datamodels.Player
+import com.garrettbutchko.minimate.dataModels.playerModels.LeaderboardEntry
+import com.garrettbutchko.minimate.dataModels.playerModels.Player
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.CollectionReference
 import dev.gitlive.firebase.firestore.Direction
-import dev.gitlive.firebase.firestore.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlin.math.min
 
 class CourseLeaderboardRepository {
 

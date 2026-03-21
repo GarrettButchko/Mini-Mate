@@ -1,4 +1,4 @@
-package com.garrettbutchko.minimate.datamodels
+package com.garrettbutchko.minimate.dataModels.courseModels
 
 import com.garrettbutchko.minimate.generateUUID
 import com.garrettbutchko.minimate.utilities.DateUtils.getWeekday

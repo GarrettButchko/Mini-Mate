@@ -1,10 +1,10 @@
-package com.garrettbutchko.minimate.datamodels
+package com.garrettbutchko.minimate.dataModels.playerModels
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Ignore
+import com.garrettbutchko.minimate.dataModels.holeModels.Hole
 import com.garrettbutchko.minimate.generateUUID
-import com.garrettbutchko.minimate.datamodels.PlayerDTO
 
 
 @Entity
@@ -17,7 +17,6 @@ data class Player(
     val email: String? = null,
     val ballColorDT: String? = null,
     val inGame: Boolean = false,
-    val gameId: String? = null, // Relationship to Game (foreign key style)
     val holes: List<Hole> = emptyList() // Requires Room TypeConverter
 ) {
     @Ignore

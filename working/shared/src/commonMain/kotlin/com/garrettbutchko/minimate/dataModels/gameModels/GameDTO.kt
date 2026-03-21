@@ -1,7 +1,6 @@
-package com.garrettbutchko.minimate.datamodels
+package com.garrettbutchko.minimate.dataModels.gameModels
 
-import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.PlayerDTO
+import com.garrettbutchko.minimate.dataModels.playerModels.PlayerDTO
 import kotlinx.serialization.Serializable
 import dev.gitlive.firebase.firestore.Timestamp
 

@@ -1,7 +1,7 @@
 package com.garrettbutchko.minimate.repositories
 
-import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.GameDTO
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
+import com.garrettbutchko.minimate.dataModels.gameModels.GameDTO
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.database
 import kotlinx.coroutines.CoroutineScope

@@ -1,7 +1,7 @@
 package com.garrettbutchko.minimate.repositories
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.datamodels.Course
+import com.garrettbutchko.minimate.dataModels.courseModels.Course
 import com.garrettbutchko.minimate.datamodels.MapItemDTO
 import com.garrettbutchko.minimate.dataModels.courseModels.SmallCourse
 import com.garrettbutchko.minimate.utilities.PasswordGenerator

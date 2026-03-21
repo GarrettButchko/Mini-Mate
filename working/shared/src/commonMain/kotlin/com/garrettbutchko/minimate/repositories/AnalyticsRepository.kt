@@ -1,19 +1,16 @@
 package com.garrettbutchko.minimate.repositories
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.CourseEmail
-import com.garrettbutchko.minimate.datamodels.DailyDoc
-import com.garrettbutchko.minimate.datamodels.HoleAnalytics
-import com.garrettbutchko.minimate.extensions.toInstant
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
+import com.garrettbutchko.minimate.dataModels.courseModels.CourseEmail
+import com.garrettbutchko.minimate.dataModels.courseModels.DailyDoc
+import com.garrettbutchko.minimate.dataModels.courseModels.HoleAnalytics
 import com.garrettbutchko.minimate.extensions.toLocalDate
 import com.garrettbutchko.minimate.extensions.toLocalDateTime
 import com.garrettbutchko.minimate.extensions.toTimestamp
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.Timestamp
-import dev.gitlive.firebase.firestore.where
-import dev.gitlive.firebase.firestore.FieldPath
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope

@@ -1,8 +1,8 @@
 package com.garrettbutchko.minimate.repositories
 
 import com.garrettbutchko.minimate.repositories.gameRepos.LocalGameRepository
-import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.GameDTO
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
+import com.garrettbutchko.minimate.dataModels.gameModels.GameDTO
 import com.garrettbutchko.minimate.repositories.gameRepos.RemoteGameRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

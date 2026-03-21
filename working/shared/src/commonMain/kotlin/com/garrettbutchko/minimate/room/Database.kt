@@ -5,6 +5,7 @@ import com.garrettbutchko.minimate.room.dao.GameDao
 import com.garrettbutchko.minimate.room.dao.UserDao
 import com.garrettbutchko.minimate.datamodels.*
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 

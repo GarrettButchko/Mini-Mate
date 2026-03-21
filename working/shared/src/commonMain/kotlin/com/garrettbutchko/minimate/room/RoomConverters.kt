@@ -1,9 +1,9 @@
 package com.garrettbutchko.minimate.room
 
 import androidx.room.TypeConverter
-import com.garrettbutchko.minimate.datamodels.Hole
+import com.garrettbutchko.minimate.dataModels.holeModels.Hole
 import dev.gitlive.firebase.firestore.Timestamp
-import com.garrettbutchko.minimate.datamodels.Player
+import com.garrettbutchko.minimate.dataModels.playerModels.Player
 import kotlinx.serialization.json.Json
 
 class RoomConverters {

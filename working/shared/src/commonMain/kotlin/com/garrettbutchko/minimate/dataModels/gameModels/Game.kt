@@ -1,10 +1,9 @@
-package com.garrettbutchko.minimate.datamodels
+package com.garrettbutchko.minimate.dataModels.gameModels
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import dev.gitlive.firebase.firestore.Timestamp
-import com.garrettbutchko.minimate.datamodels.GameDTO
-import com.garrettbutchko.minimate.datamodels.Player
+import com.garrettbutchko.minimate.dataModels.playerModels.Player
 
 @Entity
 data class Game(
