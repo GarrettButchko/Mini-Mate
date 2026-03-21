@@ -18,7 +18,7 @@ extension UserDTO {
     }
 }
 
-extension User{
+extension UserModel{
     var ballColor: Color {
         ballColorDT?.toColor() ?? .mainOpp
     }

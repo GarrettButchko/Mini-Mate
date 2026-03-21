@@ -28,14 +28,5 @@ object CourseIDGenerator {
             .joinToString("-")
     }
 
-    /**
-     * Generates a short SHA-256 hash.
-     * Note: For pure KMP (iOS/Android), you'd typically use a library like
-     * 'Kotlin Crypto' or expect/actual for Platform-specific SHA256.
-     */
-    private fun shortHash(text: String): String {
-        // Use a simple hash for commonMain to avoid JVM-specific MessageDigest
-        val hash = text.fold(0L) { acc, c -> acc * 31 + c.code.toLong() }
-        return hash.toString(16).lowercase().take(8)
-    }
+
 }

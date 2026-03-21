@@ -4,25 +4,6 @@
    <FileRef
       location = "group:admin-ios/admin-ios.xcodeproj">
    </FileRef>
-   <Group
-      location = "group:SharedSwift"
-      name = "SharedSwift">
-      <FileSystemSynchronizedGroup
-         location = "group:Utilities"
-         name = "Utilities">
-      </FileSystemSynchronizedGroup>
-      <FileSystemSynchronizedGroup
-         location = "group:Views"
-         name = "Views">
-      </FileSystemSynchronizedGroup>
-      <FileRef
-         location = "group:Shared-Assets.xcassets">
-      </FileRef>
-      <FileSystemSynchronizedGroup
-         location = "group:ModelKotlinExtensions"
-         name = "ModelKotlinExtensions">
-      </FileSystemSynchronizedGroup>
-   </Group>
    <FileRef
       location = "group:user-ios/user-ios.xcodeproj">
    </FileRef>

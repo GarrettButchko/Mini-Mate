@@ -17,8 +17,8 @@ data class UserDTO(
     val accountType: List<String> = emptyList(),
     val adminCourses: List<String> = emptyList()
 ){
-    fun toUser(): User {
-        return User(
+    fun toUser(): UserModel {
+        return UserModel(
             googleId = googleId,
             appleId = appleId,
             name = name,

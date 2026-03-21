@@ -2,7 +2,7 @@ package com.garrettbutchko.minimate.repositories.userRepos
 
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.room.dao.UserDao
-import com.garrettbutchko.minimate.datamodels.User
+import com.garrettbutchko.minimate.datamodels.UserModel
 import dev.gitlive.firebase.firestore.Timestamp
 
 class LocalUserRepository(private val userDao: UserDao) {
@@ -15,7 +15,7 @@ class LocalUserRepository(private val userDao: UserDao) {
      * Replaces Swift fetch(id: String).
      * Returns the User model or null if not found.
      */
-    suspend fun fetch(id: String): User? {
+    suspend fun fetch(id: String): UserModel? {
         return try {
             userDao.fetch(id)
         } catch (e: Exception) {
@@ -28,13 +28,13 @@ class LocalUserRepository(private val userDao: UserDao) {
      * Replaces Swift save(model:updatedLastUpdated:completion:).
      * Handles the timestamp logic and the database insert.
      */
-    suspend fun save(user: User, updatedLastUpdated: Boolean = true): Result<Boolean> {
+    suspend fun save(userModel: UserModel, updatedLastUpdated: Boolean = true): Result<Boolean> {
         return try {
             // In Kotlin, data classes are immutable. We use .copy() to update the date.
             val userToSave = if (updatedLastUpdated) {
-                user.copy(lastUpdated = Timestamp.now())
+                userModel.copy(lastUpdated = Timestamp.now())
             } else {
-                user
+                userModel
             }
 
             userDao.save(userToSave)

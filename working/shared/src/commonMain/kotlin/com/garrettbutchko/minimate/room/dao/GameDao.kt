@@ -23,15 +23,17 @@ interface GameDao {
     @Query("SELECT * FROM Game")
     suspend fun fetchAllRaw(): List<Game>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM Game 
         WHERE hostUserId LIKE '%guest%' 
         AND NOT EXISTS (
-            SELECT 1 FROM User 
+            SELECT 1 FROM UserModel 
             WHERE gameIDs LIKE '%' || Game.id || '%'
         ) 
         LIMIT 1
-    """)
+    """
+    )
     suspend fun fetchGuestGame(): Game?
 
     // --- DELETING ---
@@ -48,9 +50,11 @@ interface GameDao {
     suspend fun deleteGuestGames()
 
     // --- CLEANUP (Delete Unused Games) ---
-    @Query("""
+    @Query(
+        """
         DELETE FROM Game 
-        WHERE id NOT IN (SELECT DISTINCT gameIDs FROM User)
-    """)
+        WHERE id NOT IN (SELECT DISTINCT gameIDs FROM UserModel)
+    """
+    )
     suspend fun deleteAllUnusedGames(): Int
 }

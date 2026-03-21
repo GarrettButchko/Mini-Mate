@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 import dev.gitlive.firebase.firestore.Timestamp
 
 @Entity
-data class User(
+data class UserModel(
     @PrimaryKey
     val googleId: String,
     val appleId: String? = null,

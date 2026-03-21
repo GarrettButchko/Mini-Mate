@@ -3,16 +3,16 @@ package com.garrettbutchko.minimate.analyzers
 import com.garrettbutchko.minimate.datamodels.Game
 import com.garrettbutchko.minimate.datamodels.Hole
 import com.garrettbutchko.minimate.datamodels.Player
-import com.garrettbutchko.minimate.datamodels.User
+import com.garrettbutchko.minimate.datamodels.UserModel
 import com.garrettbutchko.minimate.extensions.toInstant
 import kotlin.math.round
 
 class UserStatsAnalyzer(
-    user: User,
+    userModel: UserModel,
     private val games: List<Game>
 ) {
-    val gameIDs: List<String> = user.gameIDs
-    val userID: String = user.googleId
+    val gameIDs: List<String> = userModel.gameIDs
+    val userID: String = userModel.googleId
 
     // MARK: - Basic Stats
 

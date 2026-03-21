@@ -1,7 +1,7 @@
 package com.garrettbutchko.minimate.repositories.userRepos
 
 import co.touchlab.kermit.Logger
-import com.garrettbutchko.minimate.datamodels.User
+import com.garrettbutchko.minimate.datamodels.UserModel
 import com.garrettbutchko.minimate.datamodels.UserDTO
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
@@ -18,7 +18,7 @@ class RemoteUserRepository {
 
     private val log = Logger.withTag("RemoteUserRepo")
 
-    suspend fun fetch(id: String): User? {
+    suspend fun fetch(id: String): UserModel? {
         return try {
             val snapshot = usersCollection.document(id).get()
             if (snapshot.exists) {
@@ -32,14 +32,14 @@ class RemoteUserRepository {
         }
     }
 
-    suspend fun save(user: User, updateLastUpdated: Boolean = true): Result<Boolean> {
+    suspend fun save(userModel: UserModel, updateLastUpdated: Boolean = true): Result<Boolean> {
         return try {
             val updatedUser = if (updateLastUpdated) {
-                user.copy(lastUpdated = Timestamp.now())
+                userModel.copy(lastUpdated = Timestamp.now())
             } else {
-                user
+                userModel
             }
-            usersCollection.document(user.googleId).set(updatedUser.toDTO(), merge = true)
+            usersCollection.document(userModel.googleId).set(updatedUser.toDTO(), merge = true)
             Result.success(true)
         } catch (e: Exception) {
             log.e(e) { "❌ Firestore save error: ${e.message}" }

@@ -2,7 +2,7 @@ package com.garrettbutchko.minimate.repositories.userRepos
 
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.Game
-import com.garrettbutchko.minimate.datamodels.User
+import com.garrettbutchko.minimate.datamodels.UserModel
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.coroutines.*
 import kotlin.math.abs
@@ -27,8 +27,8 @@ class UserRepository(
         signInMethod: SignInMethod? = null,
         appleId: String? = null,
         guestGame: Game? = null,
-        onImmediate: (User) -> Unit
-    ): User {
+        onImmediate: (UserModel) -> Unit
+    ): UserModel {
         // 1️⃣ Local Phase: Check database first
         val local = localRepo.fetch(id)
         if (local != null) {
@@ -49,15 +49,15 @@ class UserRepository(
     }
 
     private suspend fun reconcile(
-        local: User?,
-        remote: User?,
+        local: UserModel?,
+        remote: UserModel?,
         id: String,
         firebaseUser: dev.gitlive.firebase.auth.FirebaseUser?,
         name: String?,
         signInMethod: SignInMethod? = null,
         appleId: String?,
         guestGame: Game?
-    ): User {
+    ): UserModel {
         return when {
             local != null && remote != null -> {
                 val delta = abs(local.lastUpdated.seconds - remote.lastUpdated.seconds)
@@ -105,14 +105,14 @@ class UserRepository(
         signInMethod: SignInMethod?,
         appleId: String?,
         guestGame: Game?
-    ): User {
+    ): UserModel {
         val finalName = name ?: firebaseUser?.displayName ?: "User#${id.take(5)}"
         val finalEmail = firebaseUser?.email ?: "Email"
 
         val gameIDs = if (guestGame != null) listOf(guestGame.id) else emptyList()
         val accountTypes = if (signInMethod != null) listOf(signInMethod.value) else emptyList()
 
-        val newUser = User(
+        val newUserModel = UserModel(
             googleId = id,
             appleId = appleId,
             name = finalName,
@@ -124,19 +124,19 @@ class UserRepository(
         )
 
         // Save to both sources
-        localRepo.save(newUser, false)
-        remoteRepo.save(newUser, false)
-        return newUser
+        localRepo.save(newUserModel, false)
+        remoteRepo.save(newUserModel, false)
+        return newUserModel
     }
 
-    private fun addAccountTypeIfNeeded(user: User, type: SignInMethod?): User {
-        if (type == null || user.accountType.contains(type.value)) return user
-        return user.copy(accountType = user.accountType + type.value)
+    private fun addAccountTypeIfNeeded(userModel: UserModel, type: SignInMethod?): UserModel {
+        if (type == null || userModel.accountType.contains(type.value)) return userModel
+        return userModel.copy(accountType = userModel.accountType + type.value)
     }
 
-    suspend fun saveUnified(id: String, user: User): Pair<Boolean, Boolean> {
-        val localSuccess = localRepo.save(user)
-        val remoteSuccess = remoteRepo.save(user)
+    suspend fun saveUnified(id: String, userModel: UserModel): Pair<Boolean, Boolean> {
+        val localSuccess = localRepo.save(userModel)
+        val remoteSuccess = remoteRepo.save(userModel)
         return Pair(localSuccess.isSuccess, remoteSuccess.isSuccess)
     }
 

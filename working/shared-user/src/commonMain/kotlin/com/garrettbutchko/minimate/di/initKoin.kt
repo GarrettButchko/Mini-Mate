@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.di
 
+import com.garrettbutchko.minimate.di.sharedUserModule
 import org.koin.core.context.startKoin
 import org.koin.core.KoinApplication
 import org.koin.dsl.KoinAppDeclaration
@@ -10,7 +11,8 @@ fun initKoin(config: KoinAppDeclaration? = null): KoinApplication {
         includes(config)
         modules(
             sharedModule,
-            platformModule
+            platformModule,
+            sharedUserModule
         )
     }
 }
