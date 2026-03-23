@@ -11,7 +11,6 @@ This repository is a **Kotlin Multiplatform (KMP)** project containing four appl
 - **`working/androidApps/user-android`**: The Android application for players.
 - **`working/iosApps/admin-ios`**: The SwiftUI application for course administrators.
 - **`working/iosApps/user-ios`**: The SwiftUI application for players.
-- **`server`**: Ktor-based backend service.
 
 ## Features
 
@@ -30,8 +29,8 @@ This repository is a **Kotlin Multiplatform (KMP)** project containing four appl
 - **Shared Logic**: Kotlin Multiplatform (KMP)
 - **Android**: Jetpack Compose, Kotlin
 - **iOS**: SwiftUI, SwiftData
-- **Backend**: Ktor (Server), Firebase (Auth, Firestore, Functions)
-- **Database**: Firestore (Remote), SwiftData/Room (Local)
+- **Backend**: Firebase (Auth, Firestore, Functions)
+- **Database**: Firestore (Remote), Room (Local)
 
 ## Getting Started
 
@@ -46,12 +45,6 @@ This repository is a **Kotlin Multiplatform (KMP)** project containing four appl
 3. Select either the `admin-ios` or `user-ios` scheme.
 4. Ensure `GoogleService-Info.plist` is added to the respective app targets.
 5. Build and run on a simulator or device.
-
-### Server Development
-1. Run the Ktor server via Gradle:
-   ```shell
-   ./gradlew :server:run
-   ```
 
 ## Contributing
 - Follow the existing project structure: place shared logic in the `shared` module and platform-specific UI in the respective app folders.
