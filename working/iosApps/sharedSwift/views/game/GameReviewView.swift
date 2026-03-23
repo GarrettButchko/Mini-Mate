@@ -1,0 +1,377 @@
+// GameReviewView.swift
+// MiniMate
+//
+// Refactored to use SwiftData models and AuthViewModel
+
+import SwiftUI
+
+#if canImport(shared_user)
+import shared_user
+#elseif canImport(shared_admin)
+import shared_admin
+#endif
+
+struct GameReviewView: View {
+    @EnvironmentObject var viewManager: ViewManagerSwift
+    @StateObject private var viewModel: GameReviewViewModelSwift
+    
+    var showBackToStatsButton: Bool = false
+    var isInCourseSettings: Bool = false
+    
+    @State private var scrollOffset: CGFloat
+    @State private var uuid: UUID?
+    @State private var showInfoView: Bool
+    @State private var titleHeight: CGFloat = 0
+    
+    // Custom init to assign @StateObject and normal vars
+    init(game: Game, showBackToStatsButton: Bool = false, isInCourseSettings: Bool = false, scrollOffset: CGFloat = 0, uuid: UUID? = nil, showInfoView: Bool = false) {
+        self.showBackToStatsButton = showBackToStatsButton
+        self.isInCourseSettings = isInCourseSettings
+        
+        _viewModel = StateObject(wrappedValue: GameReviewViewModelSwift(game: game))
+        _scrollOffset = State(initialValue: scrollOffset)
+        _uuid = State(initialValue: uuid)
+        _showInfoView = State(initialValue: showInfoView)
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            headerView
+                .padding(.top)
+            if !isInCourseSettings {
+                BarChartView(data: viewModel.kotlinVM.averageStrokes(), title: "Average Strokes", paddingReview: true)
+                    .frame(height: 140)
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                            .subVsColor(makeColor: viewModel.course?.scoreCardColor)
+                    )
+                    .cardShadow()
+            }
+            scoreGridView
+            footerView
+        }
+        .padding()
+        .sheet(isPresented: $showInfoView) {
+            GameInfoView(game: viewModel.kotlinVM.game, isSheetPresent: $showInfoView)
+        }
+        .background(.bg)
+        .animation(.spring, value: viewModel.course?.scoreCardColor)
+    }
+    
+    
+    
+    // MARK: Header
+    private var headerView: some View {
+        VStack{
+            HStack {
+                HStack{
+                    VStack(alignment: .leading){
+                        Text("Scorecard")
+                            .font(.title).fontWeight(.bold)
+                        if let locationName = viewModel.kotlinVM.game.locationName {
+                            Text(locationName)
+                                .font(.subheadline)
+                        }
+                    }
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear
+                                .task(id: proxy.size) {
+                                    titleHeight = proxy.size.height // Capture the size and monitor changes
+                                }
+                        }
+                    }
+                    
+                    if let courseLogo = viewModel.course?.logo {
+                        Divider()
+                        
+                        AsyncImage(url: URL(string: courseLogo)) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            ProgressView()
+                        }
+                        .id(URL(string: courseLogo))
+                    }
+                }
+                .frame(maxHeight: titleHeight) // Set max height to captured title height
+                
+                Spacer()
+                
+                Button {
+                    showInfoView = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                }
+            }
+        }
+    }
+    
+    // MARK: Score Grid
+    private var scoreGridView: some View {
+        VStack {
+            playerHeaderRow
+            Divider()
+            scoreRows
+            Divider()
+            totalRow
+        }
+        .task {
+            viewModel.kotlinVM.loadCourse()
+        }
+        .background {
+            RoundedRectangle(cornerRadius: 25)
+                .subVsColor(makeColor: viewModel.course?.scoreCardColor)
+                .cardShadow()
+        }
+    }
+    
+    /// Player Row
+    private var playerHeaderRow: some View {
+        HStack {
+            Text("Name")
+                .frame(width: 100, height: 60)
+                .font(.title3).fontWeight(.semibold)
+            Divider()
+            SyncedScrollViewRepresentable(scrollOffset: $scrollOffset, syncSourceID: $uuid) {
+                HStack {
+                    ForEach(viewModel.kotlinVM.game.players, id: \.self) { player in
+                        if player.id != viewModel.kotlinVM.game.players[0].id { Divider() }
+                        PhotoIconView(photoURL: player.photoURL, name: player.name, ballColor: player.ballColor, imageSize: 30, background: .ultraThinMaterial)
+                            .frame(width: 100, height: 60)
+                        
+                    }
+                }
+            }
+        }
+        .frame(height: 60)
+        .padding(.top)
+    }
+    
+    /// Score columns and hole icons
+    private var scoreRows: some View {
+        ScrollView {
+            HStack(alignment: .top) {
+                holeNumbersColumn
+                Divider()
+                SyncedScrollViewRepresentable(scrollOffset: $scrollOffset, syncSourceID: $uuid) {
+                    PlayerColumnsShowView(game: viewModel.kotlinVM.game)
+                }
+            }
+        }
+    }
+    
+    /// first column with holes and number i.e "hole 1"
+    private var holeNumbersColumn: some View {
+        VStack {
+            ForEach(1...viewModel.kotlinVM.holeCount, id: \.self) { i in
+                if i != 1 { Divider() }
+                VStack {
+                    Text("Hole \(i)")
+                        .font(.body).fontWeight(.medium)
+
+                    if let pars = viewModel.course?.pars, pars.indices.contains(Int(i) - 1) && viewModel.course?.customPar == true {
+                        Text("Par: \(pars[Int(i) - 1])")
+                            .font(.caption)
+                    }
+                }
+                .frame(height: 60)
+            }
+        }
+        .frame(width: 100)
+    }
+    
+    /// totals row
+    private var totalRow: some View {
+        HStack {
+            VStack{
+                Text("Total")
+                    .font(.title3).fontWeight(.semibold)
+                if let coursePars = viewModel.course?.pars, coursePars.count > 0 && viewModel.course?.customPar == true{
+                    Text("Par: \(coursePars.reduce(0) { $0 + Int(truncating: ($1)) })")
+                        .font(.caption)
+                }
+            }
+            .frame(width: 100, height: 60)
+            Divider()
+            SyncedScrollViewRepresentable(scrollOffset: $scrollOffset, syncSourceID: $uuid) {
+                HStack {
+                    ForEach(viewModel.kotlinVM.game.players) { player in
+                        if player.id != viewModel.kotlinVM.game.players[0].id { Divider() }
+                        Text("Total: \(player.totalStrokes)")
+                            .frame(width: 100, height: 60)
+                    }
+                }
+            }
+        }
+        .frame(height: 60)
+        .padding(.bottom)
+    }
+    @Environment(\.dismiss) var dismiss
+    
+    // MARK: Footer complete game button and timer
+    private var footerView: some View {
+        
+        VStack{
+            ZStack{
+                if !isInCourseSettings {
+                    HStack{
+                        if showBackToStatsButton {
+                            Spacer()
+                        }
+                        if NetworkChecker.companion.shared.isConnected {
+                            ShareLink(item: viewModel.kotlinVM.shareText){
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.title2)
+                            }
+                            .padding()
+                        }
+                    }
+                }
+                if showBackToStatsButton {
+                    HStack {
+                        Button {
+                            
+                            dismiss()
+                            
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 25)
+                                    .fill(Color.blue)
+                                    .frame(width: 200, height: 60)
+                                Text("Dismiss")
+                                    .foregroundColor(.white).fontWeight(.bold)
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if isInCourseSettings {
+                if let course = viewModel.course, course.customAdActive {
+                    Button {
+                        if let link = course.adLink, link != "" {
+                            if let url = URL(string: link) {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                    } label: {
+                        HStack{
+                            VStack(alignment: .leading, spacing: 8) {
+                                if let adTitle = course.adTitle {
+                                    Text(adTitle)
+                                        .foregroundStyle(.mainOpp)
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                }
+                                
+                                if let adDescription = course.adDescription {
+                                    Text(adDescription)
+                                        .foregroundStyle(.mainOpp)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.leading)
+                                        .padding(.trailing)
+                                }
+                            }
+                            Spacer()
+                            if let adImage = course.adImage, adImage != ""  {
+                                AsyncImage(url: URL(string: adImage)) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ProgressView()
+                                            .frame(height: 50)
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(height: 50)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                            .clipped()
+                                    case .failure:
+                                        Image(systemName: "photo")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(height: 50)
+                                            .foregroundColor(.gray)
+                                            .background(Color.gray.opacity(0.2))
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    @unknown default:
+                                        EmptyView()
+                                    }
+                                }
+                            }
+                            Spacer()
+                        }
+                        .padding()
+                    }
+                    .frame(height: 50)
+                } else if let course = viewModel.course, !course.customAdActive{
+                    Text("Google Ad Here (If Not Pro User)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(.systemGray4), lineWidth: 1)
+                                )
+                        )
+                        .padding(.top, 5)
+                        .padding(.horizontal)
+                }
+            }
+            
+        }
+    }
+}
+
+// MARK: - PlayerScoreColumnView
+
+struct PlayerScoreColumnShowView: View {
+    var player: Player
+    
+    var body: some View {
+        VStack {
+            ForEach(player.holes.sorted(by: { $0.number < $1.number }), id: \.number) { hole in
+                HoleRowShowView(hole: hole)
+            }
+        }
+    }
+}
+
+// MARK: - HoleRowView
+struct HoleRowShowView: View {
+    var hole: Hole
+    
+    var body: some View {
+        VStack {
+            if hole.number != 1 { Divider() }
+            Text("\(hole.strokes)")
+                .frame(height: 60)
+        }
+    }
+}
+
+struct PlayerColumnsShowView: View {
+    var game: Game
+    
+    var body: some View {
+        HStack {
+            ForEach(game.players) { player in
+                if player.id != game.players[0].id{
+                    Divider()
+                }
+                PlayerScoreColumnShowView( player: player)
+                    .frame(width: 100)
+            }
+        }
+    }
+}
+
