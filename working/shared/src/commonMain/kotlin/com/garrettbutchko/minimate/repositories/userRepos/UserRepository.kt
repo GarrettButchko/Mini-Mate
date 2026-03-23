@@ -7,6 +7,7 @@ import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.coroutines.*
 import kotlin.math.abs
 import com.garrettbutchko.minimate.enums.SignInMethod
+import com.garrettbutchko.minimate.viewModels.FirebaseUserSmallData
 import dev.gitlive.firebase.storage.Data
 
 class UserRepository(
@@ -22,7 +23,7 @@ class UserRepository(
      */
     suspend fun loadOrCreateUser(
         id: String,
-        firebaseUser: dev.gitlive.firebase.auth.FirebaseUser? = null,
+        firebaseUser: FirebaseUserSmallData? = null,
         name: String? = null,
         signInMethod: SignInMethod? = null,
         appleId: String? = null,
@@ -52,7 +53,7 @@ class UserRepository(
         local: UserModel?,
         remote: UserModel?,
         id: String,
-        firebaseUser: dev.gitlive.firebase.auth.FirebaseUser?,
+        firebaseUser: FirebaseUserSmallData?,
         name: String?,
         signInMethod: SignInMethod? = null,
         appleId: String?,
@@ -100,7 +101,7 @@ class UserRepository(
 
     private suspend fun createUser(
         id: String,
-        firebaseUser: dev.gitlive.firebase.auth.FirebaseUser?,
+        firebaseUser: FirebaseUserSmallData?,
         name: String?,
         signInMethod: SignInMethod?,
         appleId: String?,

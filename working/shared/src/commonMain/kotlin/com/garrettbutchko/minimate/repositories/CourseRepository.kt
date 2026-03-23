@@ -2,7 +2,7 @@ package com.garrettbutchko.minimate.repositories
 
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.dataModels.courseModels.Course
-import com.garrettbutchko.minimate.datamodels.MapItemDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 import com.garrettbutchko.minimate.dataModels.courseModels.SmallCourse
 import com.garrettbutchko.minimate.utilities.PasswordGenerator
 import dev.gitlive.firebase.Firebase
@@ -17,6 +17,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import dev.gitlive.firebase.firestore.FieldValue.Companion.delete
 import dev.gitlive.firebase.storage.Data
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 class CourseRepository {
 
@@ -78,7 +80,7 @@ class CourseRepository {
         }
     }
 
-    suspend fun fetchCourse(id: String, mapItem: MapItemDTO? = null): Course? {
+    suspend fun fetchCourse(id: String, mapItem: MapItemDTO? = null, function: () -> Unit): Course? {
         val ref = db.collection(collectionName).document(id)
         return try {
             val snapshot = ref.get()
@@ -93,10 +95,31 @@ class CourseRepository {
         }
     }
 
+    suspend fun fetchCourse(id: String, mapItem: MapItemDTO? = null): Course? {
+        val ref = db.collection(collectionName).document(id)
+        return try {
+            // .get() is likely a suspending call in your Firestore KMP library
+            val snapshot = ref.get()
+            if (snapshot.exists) {
+                snapshot.data<Course>()
+            } else {
+                mapItem?.let { createCourseWithMapItem(id, it) }
+            }
+        } catch (e: Exception) {
+            println("❌ Failed to fetch course: ${e.message}")
+            null
+        }
+    }
+
+    // 2. Updated fetchCourses
     suspend fun fetchCourses(ids: List<String>): List<Course> = coroutineScope {
         ids.map { id ->
-            async { fetchCourse(id) }
-        }.awaitAll().filterNotNull()
+            async {
+                fetchCourse(id)
+            }
+        }
+            .awaitAll()
+            .filterNotNull()
     }
 
     suspend fun fetchCourseByName(name: String): Course? {

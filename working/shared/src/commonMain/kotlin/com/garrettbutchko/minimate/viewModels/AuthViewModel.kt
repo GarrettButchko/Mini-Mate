@@ -3,6 +3,7 @@ package com.garrettbutchko.minimate.viewModels
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.datamodels.UserModel
+import com.garrettbutchko.minimate.enums.SignInMethod
 import com.garrettbutchko.minimate.repositories.FirebaseAuthRepository
 import com.garrettbutchko.minimate.repositories.userRepos.UserRepository
 import dev.gitlive.firebase.auth.AuthCredential
@@ -15,10 +16,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
+import dev.gitlive.firebase.auth.EmailAuthProvider
 
+data class FirebaseUserSmallData (
+    val uid: String,
+    val email: String?,
+    val displayName: String?,
+    val photoURL: String?
+)
 
 open class AuthViewModel(
     val authRepository: FirebaseAuthRepository = FirebaseAuthRepository(),
+    val viewManager: AppNavigationManaging,
+    val userRepository: UserRepository,
     val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
     private val log = Logger.withTag("AuthViewModel")
@@ -26,8 +36,8 @@ open class AuthViewModel(
     private val _firebaseUser = MutableStateFlow<FirebaseUser?>(authRepository.currentUser)
     val firebaseUser: StateFlow<FirebaseUser?> = _firebaseUser.asStateFlow()
 
-    private val _userModelModel = MutableStateFlow<UserModel?>(null)
-    val userModel: StateFlow<UserModel?> = _userModelModel.asStateFlow()
+    private val _userModel = MutableStateFlow<UserModel?>(null)
+    val userModel: StateFlow<UserModel?> = _userModel.asStateFlow()
 
     private val _isLoadingUser = MutableStateFlow(false)
     val isLoadingUser: StateFlow<Boolean> = _isLoadingUser.asStateFlow()
@@ -38,7 +48,7 @@ open class AuthViewModel(
         get() = _firebaseUser.value?.uid
 
     fun setUserModel(userModel: UserModel?) {
-        _userModelModel.value = userModel
+        _userModel.value = userModel
     }
 
     fun setLoading(state: Boolean) {
@@ -46,9 +56,9 @@ open class AuthViewModel(
     }
 
     fun updateUserName(name: String) {
-        val currentUser = _userModelModel.value
+        val currentUser = _userModel.value
         if (currentUser != null) {
-            _userModelModel.value = currentUser.copy(name = name)
+            _userModel.value = currentUser.copy(name = name)
         }
     }
 
@@ -98,7 +108,7 @@ open class AuthViewModel(
     suspend fun reauthenticateWithEmail(email: String, password: String): Result<AuthCredential> {
         return try {
             // Firebase uses EmailAuthProvider.credential
-            val credential = dev.gitlive.firebase.auth.EmailAuthProvider.credential(email, password)
+            val credential = EmailAuthProvider.credential(email, password)
             val result = authRepository.reauthenticate(credential)
             if (result.isSuccess) {
                 Result.success(credential)
@@ -147,23 +157,21 @@ open class AuthViewModel(
     }
 
     fun createOrSignInUserAndNavigateToHome(
-        userRepo: UserRepository,
-        viewManager: AppNavigationManaging,
-        user: FirebaseUser,
+        user: FirebaseUserSmallData,
         name: String? = null,
-        signInMethod: com.garrettbutchko.minimate.enums.SignInMethod? = null,
+        signInMethod: SignInMethod? = null,
         appleId: String? = null,
         navToHome: Boolean = true,
         guestGame: Game? = null,
         onErrorMessage: (String?, Boolean) -> Unit,
-        onClearGuestGame: () -> Unit,
+        onClearGuestGame: (Game?) -> Unit,
         completion: () -> Unit = {}
     ) {
         onErrorMessage(null, false)
         coroutineScope.launch {
             try {
                 // Wait for UserRepository to resolve the user
-                val loadedUser = userRepo.loadOrCreateUser(
+                val loadedUser = userRepository.loadOrCreateUser(
                     id = user.uid,
                     firebaseUser = user,
                     name = name,
@@ -181,7 +189,7 @@ open class AuthViewModel(
                 // UserRepository doesn't expose a "creation" boolean directly in loadOrCreateUser anymore, 
                 // but we can just invoke onClearGuestGame if a guestGame was provided.
                 if (guestGame != null) {
-                    onClearGuestGame()
+                    onClearGuestGame(null)
                 }
 
                 if (navToHome) {
@@ -196,54 +204,175 @@ open class AuthViewModel(
         }
     }
 
+    fun signUpUIManage(
+        emailInput: String,
+        passwordInput: String,
+        guestGame: Game? = null,
+        onClearForm: () -> Unit,
+        onSuccess: () -> Unit,
+        onErrorMessage: (String?, Boolean) -> Unit,
+        onClearGuestGame: (Game?) -> Unit
+    ) {
+        coroutineScope.launch {
+            val result = createUser(emailInput, passwordInput)
+
+            if (result.isFailure) {
+                onErrorMessage(result.exceptionOrNull()?.message ?: "Sign up failed", false)
+                return@launch
+            }
+
+            val firebaseUser = result.getOrNull()
+            if (firebaseUser != null) {
+                val userData = FirebaseUserSmallData(
+                    uid = firebaseUser.uid,
+                    email = firebaseUser.email,
+                    displayName = firebaseUser.displayName,
+                    photoURL = firebaseUser.photoURL
+                )
+
+                createOrSignInUserAndNavigateToHome(
+                    user = userData,
+                    signInMethod = SignInMethod.EMAIL,
+                    navToHome = false,
+                    guestGame = guestGame,
+                    onErrorMessage = onErrorMessage,
+                    onClearGuestGame = onClearGuestGame
+                ) {
+                    coroutineScope.launch {
+                        val verificationResult = authRepository.sendEmailVerification()
+
+                        if (verificationResult.isFailure) {
+                            val error = verificationResult.exceptionOrNull()?.message ?: "Unknown error"
+                            onErrorMessage("Couldn’t send verification email: $error", false)
+                        } else {
+                            onClearForm()
+                            onSuccess()
+                            onErrorMessage("Please Verify Your Email To Continue", true)
+                            logout()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun handleSignInResult(
+        result: Result<FirebaseUser?>,
+        onErrorMessage: (String?, Boolean) -> Unit,
+        onClearGuestGame: (Game?) -> Unit
+    ) {
+        result.fold(
+            onSuccess = { firebaseUser ->
+                if (firebaseUser != null) {
+                    val userData = FirebaseUserSmallData(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email,
+                        displayName = firebaseUser.displayName,
+                        photoURL = firebaseUser.photoURL
+                    )
+                    createOrSignInUserAndNavigateToHome(
+                        user = userData,
+                        signInMethod = SignInMethod.GOOGLE,
+                        onErrorMessage = onErrorMessage,
+                        onClearGuestGame = onClearGuestGame
+                    )
+                } else {
+                    onErrorMessage("User data is missing.", true)
+                }
+            },
+            onFailure = { error ->
+                onErrorMessage(error.message ?: "An unknown error occurred", true)
+            }
+        )
+    }
+
+    fun handleAppleSignInResult(
+        result: Result<FirebaseUser?>,
+        name: String?,
+        appleId: String?,
+        guestGame: Game?,
+        onErrorMessage: (String?, Boolean) -> Unit,
+        onClearGuestGame: (Game?) -> Unit
+    ) {
+        result.fold(
+            onSuccess = { firebaseUser ->
+                if (firebaseUser != null) {
+                    val userData = FirebaseUserSmallData(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email,
+                        displayName = firebaseUser.displayName,
+                        photoURL = firebaseUser.photoURL
+                    )
+                    createOrSignInUserAndNavigateToHome(
+                        user = userData,
+                        name = name,
+                        signInMethod = SignInMethod.APPLE,
+                        appleId = appleId,
+                        guestGame = guestGame,
+                        onErrorMessage = onErrorMessage,
+                        onClearGuestGame = onClearGuestGame
+                    )
+                } else {
+                    onErrorMessage("User data is missing.", true)
+                }
+            },
+            onFailure = { error ->
+                onErrorMessage(error.message ?: "An unknown error occurred", true)
+            }
+        )
+    }
+
     fun signInUIManage(
         emailInput: String,
         passwordInput: String,
-        userRepo: UserRepository,
-        viewManager: AppNavigationManaging,
         guestGame: Game? = null,
         onClearForm: () -> Unit,
         onShowSignUp: () -> Unit,
         onErrorMessage: (String?, Boolean) -> Unit,
-        onClearGuestGame: () -> Unit,
-        completion: () -> Unit = {}
+        onClearGuestGame: (Game?) -> Unit
     ) {
         coroutineScope.launch {
             val result = signIn(emailInput, passwordInput)
+
             if (result.isFailure) {
                 onShowSignUp()
                 onErrorMessage("No User Found Please Sign Up", false)
-                completion()
                 return@launch
             }
             
             val firebaseUser = result.getOrNull()
             if (firebaseUser != null) {
                 if (firebaseUser.isEmailVerified) {
+
+                    val userData = FirebaseUserSmallData(
+                        uid = firebaseUser.uid,
+                        email = firebaseUser.email,
+                        displayName = firebaseUser.displayName,
+                        photoURL = firebaseUser.photoURL
+                    )
+
                     createOrSignInUserAndNavigateToHome(
-                        userRepo = userRepo,
-                        viewManager = viewManager,
-                        user = firebaseUser,
-                        signInMethod = com.garrettbutchko.minimate.enums.SignInMethod.EMAIL,
+                        user = userData,
+                        signInMethod = SignInMethod.EMAIL,
                         guestGame = guestGame,
                         onErrorMessage = onErrorMessage,
-                        onClearGuestGame = onClearGuestGame,
-                        completion = completion
-                    )
+                        onClearGuestGame = onClearGuestGame
+                    ){}
                 } else {
+
                     val verificationResult = authRepository.sendEmailVerification()
+
                     if (verificationResult.isFailure) {
+
                         val error = verificationResult.exceptionOrNull()?.message ?: "Unknown error"
+
                         onErrorMessage("Couldn’t send verification email: ${error}", false)
                     } else {
                         onClearForm()
                         onErrorMessage("Please Verify Your Email To Continue", true)
                         logout() // Logout AFTER email is sent
                     }
-                    completion()
                 }
-            } else {
-                completion()
             }
         }
     }

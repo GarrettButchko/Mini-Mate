@@ -1,8 +1,8 @@
 package com.garrettbutchko.minimate.extensions
 
-import com.garrettbutchko.minimate.dataModels.AddressDTO
-import com.garrettbutchko.minimate.dataModels.CoordinateDTO
-import com.garrettbutchko.minimate.dataModels.MapItemDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.AddressDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.CoordinateDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 import com.garrettbutchko.minimate.dataModels.courseModels.Course
 import com.garrettbutchko.minimate.utilities.CourseIDGenerator
 import com.garrettbutchko.minimate.utilities.PasswordGenerator

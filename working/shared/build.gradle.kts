@@ -25,7 +25,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.androidx.room.runtime)
             implementation("co.touchlab:kermit:2.0.2")
-            implementation(libs.kotlinx.serialization.json)
+            api(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
 
             // Room SQLite

@@ -19,6 +19,16 @@ fun MapRegionData.Companion.fromCValue(cValue: CValue<MKCoordinateRegion>): MapR
 }
 
 @OptIn(ExperimentalForeignApi::class)
+fun MKCoordinateRegion.toMapRegionData(): MapRegionData {
+    return MapRegionData(
+        latitude = center.latitude,
+        longitude = center.longitude,
+        latitudeDelta = span.latitudeDelta,
+        longitudeDelta = span.longitudeDelta
+    )
+}
+
+@OptIn(ExperimentalForeignApi::class)
 fun MapRegionData.toCValue(): CValue<MKCoordinateRegion> = cValue {
     this.center.latitude = latitude
     this.center.longitude = longitude

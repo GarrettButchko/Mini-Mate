@@ -15,6 +15,7 @@
 		2102E1F52F6C653700F971E4 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E1F42F6C653700F971E4 /* FirebaseDatabase */; };
 		2102E1F72F6C653B00F971E4 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E1F62F6C653B00F971E4 /* FirebaseFirestore */; };
 		2102E1F92F6C653F00F971E4 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E1F82F6C653F00F971E4 /* FirebaseStorage */; };
+		21FA50A02F70E96B00701BBB /* MarqueeText in Frameworks */ = {isa = PBXBuildFile; productRef = 21FA509F2F70E96B00701BBB /* MarqueeText */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 				2102E1EF2F6C652E00F971E4 /* FirebaseAnalytics in Frameworks */,
 				2102E1F32F6C653400F971E4 /* FirebaseCore in Frameworks */,
 				2102E1F52F6C653700F971E4 /* FirebaseDatabase in Frameworks */,
+				21FA50A02F70E96B00701BBB /* MarqueeText in Frameworks */,
 				210293832F6E26D200375E34 /* GoogleSignInSwift in Frameworks */,
 				2102E1F72F6C653B00F971E4 /* FirebaseFirestore in Frameworks */,
 				2102E1F12F6C653100F971E4 /* FirebaseAuth in Frameworks */,
@@ -109,6 +111,7 @@
 				2102E1F82F6C653F00F971E4 /* FirebaseStorage */,
 				210293802F6E26D200375E34 /* GoogleSignIn */,
 				210293822F6E26D200375E34 /* GoogleSignInSwift */,
+				21FA509F2F70E96B00701BBB /* MarqueeText */,
 			);
 			productName = "user-ios";
 			productReference = 21B56BBF2F64A65000DF589D /* user-ios.app */;
@@ -141,6 +144,7 @@
 			packageReferences = (
 				2155C0962F6667C4001BBDC5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				2102937F2F6E26D200375E34 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				21FA509E2F70E96B00701BBB /* XCRemoteSwiftPackageReference "MarqueeText" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 21B56BC02F64A65000DF589D /* Products */;
@@ -339,6 +343,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.garrettbutchko.minimate.user;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = MINIMATE;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -372,6 +377,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.garrettbutchko.minimate.user;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*]" = MINIMATE;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -421,6 +427,14 @@
 				minimumVersion = 12.10.0;
 			};
 		};
+		21FA509E2F70E96B00701BBB /* XCRemoteSwiftPackageReference "MarqueeText" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/joekndy/MarqueeText.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -463,6 +477,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2155C0962F6667C4001BBDC5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		21FA509F2F70E96B00701BBB /* MarqueeText */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21FA509E2F70E96B00701BBB /* XCRemoteSwiftPackageReference "MarqueeText" */;
+			productName = MarqueeText;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

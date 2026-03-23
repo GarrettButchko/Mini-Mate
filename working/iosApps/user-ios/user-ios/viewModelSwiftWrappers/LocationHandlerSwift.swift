@@ -24,17 +24,17 @@ class LocationHandlerSwift: ObservableObject {
     
     var mapItems: [MKMapItem] {
         get { _mapItems }
-        set { kotlin.setMapItems(items: newValue) }
+        set { kotlin.setMapItems(items: newValue.map({$0.toDTO()})) }
     }
     
     var selectedItem: MKMapItem? {
         get { _selectedItem }
-        set { kotlin.setSelectedItem(item: newValue) }
+        set { kotlin.setSelectedItem(item: newValue?.toDTO()) }
     }
     
     var userLocation: CLLocation? {
         get { _userLocation }
-        set { kotlin.setUserLocation(location: newValue) }
+        set { kotlin.setUserLocation(location: newValue?.toDTO()) }
     }
     
     var hasLocationAccess: Bool {
@@ -52,21 +52,21 @@ class LocationHandlerSwift: ObservableObject {
         // Observe search results
         Task {
             for await items in kotlin.mapItems {
-                self._mapItems = items
+                self._mapItems = items.map ({ $0.toMKMapItem() })
             }
         }
 
         // Observe the selected course
         Task {
             for await item in kotlin.selectedItem {
-                self._selectedItem = item
+                self._selectedItem = item?.toMKMapItem()
             }
         }
 
         // Observe user location updates
         Task {
             for await location in kotlin.userLocation {
-                self._userLocation = location
+                self._userLocation = location?.toCLLocation()
             }
         }
 
@@ -75,33 +75,6 @@ class LocationHandlerSwift: ObservableObject {
             for await access in kotlin.hasLocationAccess {
                 self._hasLocationAccess = access.boolValue
             }
-        }
-    }
-    
-    func searchNearbyCourses(
-        upwardOffset: CLLocationDegrees = 0.03,
-        span: MKCoordinateSpan = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1),
-        completion: @escaping (Bool, MapCameraPosition?) -> Void
-    ) {
-        kotlin.searchNearbyCourses(
-            upwardOffset: upwardOffset,
-            latitudeDelta: span.latitudeDelta,
-            longitudeDelta: span.longitudeDelta
-        ) { kBool, kMKCoordinateRegion in
-            
-            // 1. Basic safety checks
-            guard kBool.boolValue, let genericValue = kMKCoordinateRegion else {
-                completion(false, nil)
-                return
-            }
-            
-            let center = CLLocationCoordinate2D(latitude: genericValue.latitude, longitude: genericValue.longitude)
-            let span = MKCoordinateSpan(latitudeDelta: genericValue.latitudeDelta, longitudeDelta: genericValue.longitudeDelta)
-            
-            let newRegion = MKCoordinateRegion(center: center, span: span)
-            let cameraPosition: MapCameraPosition = .region(newRegion)
-            
-            completion(true, cameraPosition)
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.garrettbutchko.minimate.di
 
 
+import com.garrettbutchko.minimate.repositories.AnalyticsRepository
 import com.garrettbutchko.minimate.repositories.CourseLeaderboardRepository
 import com.garrettbutchko.minimate.repositories.CourseRepository
 import com.garrettbutchko.minimate.repositories.FirebaseAuthRepository
@@ -24,20 +25,29 @@ val sharedModule = module {
     single { get<AppDatabase>().userDao() }
     single { get<AppDatabase>().gameDao() }
 
-    // Repositories (Internal helpers)
+    // Repositories
+    // User
     single { LocalUserRepository(userDao = get()) }
     single { RemoteUserRepository() }
+    single { UserRepository(localRepo = get(), remoteRepo = get()) }
+
+    // Games
     single { LocalGameRepository(gameDao = get()) }
     single { RemoteGameRepository() }
+
+    // Course
     single { CourseRepository() }
     single { CourseLeaderboardRepository() }
 
-    // Public Repositories (Interface based)
-    single { UserRepository(localRepo = get(), remoteRepo = get()) }
+    // Auth
     single { FirebaseAuthRepository() }
 
+    // Analytics
+    single{ AnalyticsRepository() }
+
     // ViewModels (Using factory or viewModel keyword)
-    factory { AuthViewModel(authRepository = get()) }
+    factory { AuthViewModel(authRepository = get(), viewManager = get(), userRepository = get()) }
+
     factory { ProfileViewModel(
         authModel = get(),
         userRepo = get(),

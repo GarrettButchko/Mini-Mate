@@ -17,6 +17,7 @@ struct ContentView: View {
 
     let course = Course(
         id: "course_001",
+        placeID: "",
         name: "Sunset Valley",
         password: "secure",
         logo: nil,

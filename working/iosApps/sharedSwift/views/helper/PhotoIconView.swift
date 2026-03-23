@@ -1,0 +1,64 @@
+import SwiftUI
+
+#if canImport(shared_user)
+import shared_user
+#elseif canImport(shared_admin)
+import shared_admin
+#endif
+
+struct PhotoIconView<Background: ShapeStyle>: View {
+    let photoURL: String?
+    let name: String
+    let ballColor: Color?
+    let imageSize: CGFloat
+    var background: Background
+    
+    var body: some View {
+        VStack {
+            ZStack {
+                /// Background circle
+                Circle()
+                    .fill(background)
+                    .frame(width: imageSize + 10, height: imageSize + 10)
+                
+                /// Photo
+                AsyncImage(url: URL(string: photoURL ?? "")) { phase in
+                    switch phase {
+                    case .empty:
+                        Image("logo_svg")
+                            .renderingMode(.template)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: imageSize, height: imageSize)
+                            .foregroundStyle(ballColor != nil ? ballColor! : .mainOpp)
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit) // show full image
+                            .frame(width: imageSize, height: imageSize)
+                            .clipShape(Circle()) // keeps the round shape
+                    case .failure:
+                        Image("logo_svg")
+                            .renderingMode(.template)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: imageSize, height: imageSize)
+                            .foregroundStyle(ballColor != nil ? ballColor! : .mainOpp)
+                    @unknown default:
+                        Image("logo_svg")
+                            .renderingMode(.template)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: imageSize, height: imageSize)
+                            .foregroundStyle(ballColor != nil ? ballColor! : .mainOpp)
+                    }
+                }
+            }
+            /// Name on the bottom with dynamic text size
+            Text(name)
+                .font(.system(size: imageSize * 0.3)) // Dynamic font size based on imageSize
+                .lineLimit(1)
+                .foregroundStyle(.mainOpp)
+        }
+    }
+}

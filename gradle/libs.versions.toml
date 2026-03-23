@@ -24,6 +24,7 @@ kotlinx-datetime = "0.7.1"
 ktor = "3.4.1"
 logback = "1.5.32"
 material3 = "1.10.0-alpha05"
+qrcodeKotlin = "4.5.0"
 
 [libraries]
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
@@ -69,6 +70,7 @@ firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "fir
 firebase-database = { module = "dev.gitlive:firebase-database", version.ref = "firebaseKotlin" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-compiler = { module = "io.insert-koin:koin-compiler", version.ref = "koin" }
+qrcode-kotlin = { module = "io.github.g0dkar:qrcode-kotlin", version.ref = "qrcodeKotlin" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

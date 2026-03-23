@@ -1,6 +1,6 @@
 package com.garrettbutchko.minimate.utilities
 
-import com.garrettbutchko.minimate.datamodels.MapItemDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 
 object CourseIDGenerator {
 

@@ -23,7 +23,7 @@ import shared_admin
 
 @MainActor
 class AuthViewModelSwift: ObservableObject {
-    private let kotlinVM: AuthViewModel
+    let kotlinVM: AuthViewModel
     
     // 1. Internal storage for the observed Flow values
     @Published private var _firebaseUser: Firebase_authFirebaseUser?
@@ -70,6 +70,86 @@ class AuthViewModelSwift: ObservableObject {
             }
         }
     }
+    
+    
+    func createOrSignInUserAndNavigateToHome(
+        user: FirebaseUserSmallData,
+        name: String? = nil,
+        errorMessage: Binding<(message: String?,type: Bool)>,
+        signInMethod: SignInMethod? = nil,
+        appleId: String? = nil,
+        navToHome: Bool = true,
+        guestGame: Binding<Game?>,
+        completion: @escaping(() -> Void)){
+            kotlinVM.createOrSignInUserAndNavigateToHome(
+                user: user,
+                name: name,
+                signInMethod: signInMethod,
+                appleId: appleId,
+                navToHome: navToHome,
+                guestGame: guestGame.wrappedValue) { message, type in
+                    errorMessage.wrappedValue = (message, type.boolValue)
+                } onClearGuestGame: { game in
+                    guestGame.wrappedValue = game
+                } completion: {
+                    completion()
+                }
+    }
+
+    func signInUIManage(
+        email: Binding<String>,
+        password: Binding<String>,
+        confirmPassword: Binding<String>,
+        isTextFieldFocused: FocusState<SignInView.Field?>.Binding,
+        errorMessage: Binding<(message: String?, type: Bool)>,
+        showSignUp: Binding<Bool>,
+        guestGame: Binding<Game?>){
+        
+        kotlinVM.signInUIManage(emailInput: email.wrappedValue, passwordInput: password.wrappedValue, guestGame: guestGame.wrappedValue) {
+            email.wrappedValue = ""
+            password.wrappedValue  = ""
+            confirmPassword.wrappedValue  = ""
+            isTextFieldFocused.wrappedValue = nil
+        } onShowSignUp: {
+            showSignUp.wrappedValue = true
+        } onErrorMessage: { message, type in
+            errorMessage.wrappedValue = (message, type.boolValue)
+        } onClearGuestGame: { game in
+            guestGame.wrappedValue = game
+        }
+    }
+
+    func signUpUIManage(
+        email: Binding<String>,
+        password: Binding<String>,
+        confirmPassword: Binding<String>,
+        isTextFieldFocused: FocusState<SignInView.Field?>.Binding,
+        errorMessage: Binding<(message: String?, type: Bool)>,
+        showSignUp: Binding<Bool>,
+        guestGame: Binding<Game?>
+    ) {
+        kotlinVM.signUpUIManage(
+            emailInput: email.wrappedValue,
+            passwordInput: password.wrappedValue,
+            guestGame: guestGame.wrappedValue,
+            onClearForm: {
+                email.wrappedValue = ""
+                password.wrappedValue = ""
+                confirmPassword.wrappedValue = ""
+                isTextFieldFocused.wrappedValue = nil
+            },
+            onSuccess: {
+                showSignUp.wrappedValue = false
+            },
+            onErrorMessage: { message, type in
+                errorMessage.wrappedValue = (message, type.boolValue)
+            },
+            onClearGuestGame: { game in
+                guestGame.wrappedValue = game
+            }
+        )
+    }
+
     
     
     /// Signs in the user using Google Sign-In and Firebase via KMP

@@ -16,6 +16,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.*
 import com.garrettbutchko.minimate.utilities.DateUtils
+import com.garrettbutchko.minimate.repositories.analytics.AnalyticsRange
+import com.garrettbutchko.minimate.repositories.analytics.isoDayNumber
+import com.garrettbutchko.minimate.repositories.analytics.random
 
 class AnalyticsRepository {
 
@@ -423,50 +426,4 @@ class AnalyticsRepository {
     }
 
     private fun LocalDate.coerceAtMost(other: LocalDate): LocalDate = if (this > other) other else this
-}
-
-private val DayOfWeek.isoDayNumber: Int
-    get() = when (this) {
-        DayOfWeek.MONDAY -> 1
-        DayOfWeek.TUESDAY -> 2
-        DayOfWeek.WEDNESDAY -> 3
-        DayOfWeek.THURSDAY -> 4
-        DayOfWeek.FRIDAY -> 5
-        DayOfWeek.SATURDAY -> 6
-        DayOfWeek.SUNDAY -> 7
-    }
-
-fun ClosedRange<Double>.random(): Double = (endInclusive - start) * kotlin.random.Random.nextDouble() + start
-fun IntRange.random(): Int = kotlin.random.Random.nextInt(start, endInclusive + 1)
-
-sealed class AnalyticsRange {
-    object Last7 : AnalyticsRange()
-    object Last30 : AnalyticsRange()
-    object Last90 : AnalyticsRange()
-    data class Custom(val start: LocalDate, val end: LocalDate) : AnalyticsRange()
-
-    fun dates(now: LocalDate = Timestamp.now().toLocalDate()): RangeResult {
-        return when (this) {
-            Last7 -> {
-                val start = now.minus(7, DateTimeUnit.DAY)
-                RangeResult(start, now, now.minus(14, DateTimeUnit.DAY), start.minus(1, DateTimeUnit.DAY))
-            }
-            Last30 -> {
-                val start = now.minus(30, DateTimeUnit.DAY)
-                RangeResult(start, now, now.minus(60, DateTimeUnit.DAY), start.minus(1, DateTimeUnit.DAY))
-            }
-            Last90 -> {
-                val start = now.minus(90, DateTimeUnit.DAY)
-                RangeResult(start, now, now.minus(180, DateTimeUnit.DAY), start.minus(1, DateTimeUnit.DAY))
-            }
-            is Custom -> {
-                val dayCount = (end.toEpochDays() - start.toEpochDays())
-                val deltaEnd = start.minus(1, DateTimeUnit.DAY)
-                val deltaStart = deltaEnd.minus(dayCount, DateTimeUnit.DAY)
-                RangeResult(start, end, deltaStart, deltaEnd)
-            }
-        }
-    }
-
-    data class RangeResult(val start: LocalDate, val end: LocalDate, val dStart: LocalDate, val dEnd: LocalDate)
 }

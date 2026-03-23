@@ -1,5 +1,7 @@
 package com.garrettbutchko.minimate.dataModels.courseModels
 
+import com.garrettbutchko.minimate.dataModels.mapModels.CoordinateDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 import com.garrettbutchko.minimate.generateUUID
 import com.garrettbutchko.minimate.utilities.DateUtils.getWeekday
 import com.garrettbutchko.minimate.utilities.DateUtils.getIsoWeekID
@@ -10,6 +12,7 @@ import dev.gitlive.firebase.firestore.Timestamp
 @Serializable
 data class Course(
     val id: String = "",
+    var placeID: String? = null,
     var name: String = "",
     var password: String = "",
 

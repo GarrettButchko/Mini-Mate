@@ -52,6 +52,8 @@ kotlin {
             implementation(libs.firebase.auth)
             implementation(libs.firebase.storage)
             implementation(libs.firebase.database)
+            
+            implementation(libs.qrcode.kotlin)
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)

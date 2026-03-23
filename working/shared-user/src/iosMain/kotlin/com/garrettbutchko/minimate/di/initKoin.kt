@@ -12,7 +12,8 @@ fun initKoin(config: KoinAppDeclaration? = null): KoinApplication {
         modules(
             sharedModule,
             platformModule,
-            sharedUserModule
+            sharedUserModule,
+            sharedUserIOSModule
         )
     }
 }

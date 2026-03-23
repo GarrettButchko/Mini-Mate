@@ -17,7 +17,7 @@ import shared_admin
 
 @MainActor
 class ViewManagerSwift: ObservableObject {
-    private let kotlinVM: ViewManager
+    let kotlinVM: ViewManager
     
     // 1. Internal storage for the observed Flow values
     @Published private var _currentView: ViewType = ViewType.Welcome.shared

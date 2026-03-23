@@ -1,11 +1,12 @@
 package com.garrettbutchko.minimate.viewModels
 
+import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 import com.garrettbutchko.minimate.dataModels.courseModels.Course
 import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.dataModels.holeModels.Hole
 import com.garrettbutchko.minimate.dataModels.playerModels.Player
-import com.garrettbutchko.minimate.dataModels.MapItemDTO
 import com.garrettbutchko.minimate.dataModels.playerModels.PlayerDTO
+import com.garrettbutchko.minimate.interfaces.LocationFinding
 import com.garrettbutchko.minimate.repositories.AnalyticsRepository
 import com.garrettbutchko.minimate.repositories.CourseRepository
 import com.garrettbutchko.minimate.repositories.LiveGameRepository
@@ -16,16 +17,21 @@ import com.garrettbutchko.minimate.utilities.CourseIDGenerator
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.database.ChildEvent
 import dev.gitlive.firebase.database.database
+import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import dev.gitlive.firebase.firestore.Timestamp
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import androidx.compose.runtime.MutableState
 
 data class GuestData(
     val id: String,
@@ -42,21 +48,34 @@ sealed class JoinGameStatus {
 class GameViewModel(
     val authModel: AuthViewModel,
     val liveGameRepo: LiveGameRepository,
+    val unifiedGameRepository: UnifiedGameRepository,
+    val localGameRepository: LocalGameRepository,
     val courseRepo: CourseRepository,
     val analyticsRepo: AnalyticsRepository,
     val remoteUserRepo: RemoteUserRepository,
+    val locationHandler: LocationFinding,
     val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
-    initialGame: Game,
+    initialGame: Game = Game(
+        id = "",
+        date = Timestamp.now(),
+        completed = false,
+        numberOfHoles = 18,
+        started = false,
+        dismissed = false,
+        live = false,
+        lastUpdated = Timestamp.now(),
+        players = emptyList<Player>(),
+    ),
     initialCourse: Course? = null,
     var onlineGame: Boolean = true
 ) {
     private val _game = MutableStateFlow(initialGame)
     val game: StateFlow<Game> = _game.asStateFlow()
     private val _course = MutableStateFlow(initialCourse)
-    val course: StateFlow<Course?> = _course.asStateFlow()
+    var course: StateFlow<Course?> = _course.asStateFlow()
 
     private var lastUpdated: Timestamp = Timestamp.now()
-    private var hasLoaded: Boolean = false
+    var hasLoaded: Boolean = false
     private var isDismissing: Boolean = false
     private var listenerJob: Job? = null
 
@@ -75,10 +94,6 @@ class GameViewModel(
 
     fun setListenerJob(job: Job?) {
         listenerJob = job
-    }
-
-    fun setGameValue(game: Game) {
-        _game.value = game
     }
 
     fun resetGame() {
@@ -324,9 +339,7 @@ class GameViewModel(
         resetCourse()
         
         liveGameRepo.fetchGame(id) { game ->
-            val status = validateJoinGame(game, userId)
-            
-            when (status) {
+            when (val status = validateJoinGame(game, userId)) {
                 is JoinGameStatus.Success -> {
                     if (game != null) {
                         setGame(game)
@@ -391,7 +404,7 @@ class GameViewModel(
         }
     }
 
-    fun startGame(onHostHidden: () -> Unit) {
+    fun startGame(onHostHidden: (Boolean) -> Unit) {
         if (_game.value.started) return
         
         val updatedPlayers = _game.value.players.map {
@@ -404,7 +417,7 @@ class GameViewModel(
             players = updatedPlayers
         )
         pushUpdate()
-        onHostHidden()
+        onHostHidden(false)
     }
 
     fun dismissGame() {
@@ -430,7 +443,7 @@ class GameViewModel(
         isDismissing = false
     }
 
-    fun finishAndPersistGame(unifiedGameRepository: UnifiedGameRepository, localGameRepository: LocalGameRepository, isGuest: Boolean = false) {
+    fun finishAndPersistGame(isGuest: Boolean = false) {
         stopListening()
         
         val finished = _game.value.copy(
@@ -509,22 +522,67 @@ class GameViewModel(
         return result.getOrDefault(false)
     }
 
-    fun findClosestLocationAndLoadCourse(closestPlace: MapItemDTO?) {
+
+    suspend fun findClosestLocationAndLoadCourse() {
         if (hasLoaded) return
-        if (closestPlace == null) return
-        
-        val courseID = CourseIDGenerator.generateCourseID(closestPlace)
-        
-        coroutineScope.launch {
-            val fetchedCourse = courseRepo.fetchCourse(courseID, closestPlace)
-            _course.value = fetchedCourse
-            hasLoaded = true
+
+        if (locationHandler.userLocation.value == null) {
+            locationHandler.userLocation
+                .filterNotNull() // Skip nulls
+                .first()         // Suspend until the first non-null coordinate arrives
+        }
+
+        val closestPlace: MapItemDTO? = suspendCancellableCoroutine { continuation ->
+            locationHandler.findClosestMiniGolf { place ->
+                continuation.resume(place)
+            }
+        }
+
+        val placeDTO = closestPlace ?: return
+        val courseID = CourseIDGenerator.generateCourseID(placeDTO)
+
+        val fetchedCourse: Course? = courseRepo.fetchCourse(id = courseID, mapItem = placeDTO)
+
+        setCourse(fetchedCourse)
+        setHasLoaded(true)
+    }
+
+    suspend fun setUp() {
+        if (course.value == null && !hasLoaded) {
+            findClosestLocationAndLoadCourse()
         }
     }
 
+    suspend fun searchNearby(isLoading1: (Boolean) -> Unit, isLoading2: (Boolean) -> Unit) {
+        isLoading1(true)
+        setHasLoaded(false)
+        try {
+            findClosestLocationAndLoadCourse()
+        } finally {
+            isLoading2(true)
+        }
+    }
+
+
+    fun exit(){
+        resetCourse()
+    }
+
     fun resetCourse() {
-        _course.value = null
-        _game.value = _game.value.copy(courseID = null)
+        setCourse(null)
+        setGame(_game.value.copy(courseID = null))
+    }
+
+    suspend fun retry(firstRotate: (Boolean) -> Unit, secondRotate: (Boolean) -> Unit, isLoading1: (Boolean) -> Unit, isLoading2: (Boolean) -> Unit) {
+        firstRotate(true)
+        searchNearby(
+            isLoading1 = isLoading1,
+            isLoading2 = isLoading2
+        )
+        coroutineScope.launch {
+            delay(1000L) // Wait for 1 second (1000 milliseconds)
+            secondRotate(false)
+        }
     }
 
     fun generateGameCode(length: Int = 6): String {

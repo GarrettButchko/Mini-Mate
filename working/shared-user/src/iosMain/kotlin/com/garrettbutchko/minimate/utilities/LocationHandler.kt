@@ -1,11 +1,16 @@
 package com.garrettbutchko.minimate.utilities
 
-import com.garrettbutchko.minimate.dataModels.MapItemDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.CoordinateDTO
+import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 import com.garrettbutchko.minimate.extensions.toDTO
 import com.garrettbutchko.minimate.dataModels.LocationCoordinate2D
 import com.garrettbutchko.minimate.dataModels.MapRegionData
 import com.garrettbutchko.minimate.dataModels.fromCValue
+import com.garrettbutchko.minimate.dataModels.toCLLocation
 import com.garrettbutchko.minimate.dataModels.toCValue
+import com.garrettbutchko.minimate.dataModels.toMKMapItem
+import com.garrettbutchko.minimate.functions.getAddress
+import com.garrettbutchko.minimate.interfaces.LocationFinding
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.cValue
@@ -21,29 +26,29 @@ import platform.UIKit.UIScreen
 
 
 @OptIn(ExperimentalForeignApi::class)
-class LocationHandler {
+class LocationHandler : LocationFinding {
     private var currentSearch: MKLocalSearch? = null
-    private val _mapItems = MutableStateFlow<List<MKMapItem>>(emptyList())
-    val mapItems: StateFlow<List<MKMapItem>> = _mapItems.asStateFlow()
+    private val _mapItems = MutableStateFlow<List<MapItemDTO>>(emptyList())
+    override val mapItems: StateFlow<List<MapItemDTO>> = _mapItems.asStateFlow()
 
-    private val _selectedItem = MutableStateFlow<MKMapItem?>(null)
-    val selectedItem: StateFlow<MKMapItem?> = _selectedItem.asStateFlow()
+    private val _selectedItem = MutableStateFlow<MapItemDTO?>(null)
+    override val selectedItem: StateFlow<MapItemDTO?> = _selectedItem.asStateFlow()
 
-    private val _userLocation = MutableStateFlow<CLLocation?>(null)
-    val userLocation: StateFlow<CLLocation?> = _userLocation.asStateFlow()
+    private val _userLocation = MutableStateFlow<CoordinateDTO?>(null)
+    override val userLocation: StateFlow<CoordinateDTO?> = _userLocation.asStateFlow()
 
     private val _hasLocationAccess = MutableStateFlow(false)
-    val hasLocationAccess: StateFlow<Boolean> = _hasLocationAccess.asStateFlow()
+    override val hasLocationAccess: StateFlow<Boolean> = _hasLocationAccess.asStateFlow()
 
-    fun setMapItems(items: List<MKMapItem>) {
+    override fun setMapItems(items: List<MapItemDTO>) {
         _mapItems.value = items
     }
 
-    fun setSelectedItem(item: MKMapItem?) {
+    override fun setSelectedItem(item: MapItemDTO?) {
         _selectedItem.value = item
     }
 
-    fun setUserLocation(location: CLLocation?) {
+    fun setUserLocation(location: CoordinateDTO?) {
         _userLocation.value = location
     }
 
@@ -103,13 +108,15 @@ class LocationHandler {
                         )
                     }
 
-                    mapLoc.distanceFromLocation(userLoc)
+
+
+                    mapLoc.distanceFromLocation(userLoc.toCLLocation())
                 }
             } else {
                 items.mapNotNull { it as? MKMapItem }
             }
 
-            _mapItems.value = sorted
+            _mapItems.value = sorted.map { it.toDTO() }
             completion(true)
             currentSearch = null
         }
@@ -117,10 +124,10 @@ class LocationHandler {
 
     // NOTE: Returns `MKCoordinateRegion?` instead of SwiftUI's `MapCameraPosition`. 
     // You can wrap the returned region in `MapCameraPosition.region(...)` from the Swift side.
-    fun searchNearbyCourses(
-        upwardOffset: Double = 0.03,
-        latitudeDelta: Double = 0.1,
-        longitudeDelta: Double = 0.1,
+    override fun searchNearbyCourses(
+        upwardOffset: Double,
+        latitudeDelta: Double,
+        longitudeDelta: Double,
         completion: (Boolean, MapRegionData?) -> Unit
     ) {
         val networkChecker = NetworkChecker.shared
@@ -136,8 +143,8 @@ class LocationHandler {
         }
 
         val region = cValue<MKCoordinateRegion> {
-            this.center.latitude = userLoc.coordinate.useContents { latitude } + upwardOffset
-            this.center.longitude = userLoc.coordinate.useContents { longitude }
+            this.center.latitude = userLoc.latitude + upwardOffset
+            this.center.longitude = userLoc.longitude
             this.span.latitudeDelta = latitudeDelta
             this.span.longitudeDelta = longitudeDelta
         }
@@ -148,14 +155,14 @@ class LocationHandler {
         }
     }
 
-    fun findClosestMiniGolf(completion: (MapItemDTO?) -> Unit) {
+    override fun findClosestMiniGolf(completion: (MapItemDTO?) -> Unit) {
         val userLoc = _userLocation.value
         if (userLoc == null) {
             completion(null)
             return
         }
 
-        val region = makeRegion(userLoc.coordinate, 8046.72) // 5 miles in meters
+        val region = makeRegion(userLoc, 8046.72) // 5 miles in meters
 
         val request = MKLocalSearchRequest()
         request.naturalLanguageQuery = "mini golf"
@@ -177,30 +184,20 @@ class LocationHandler {
                         longitude = mapItem.coordinate.longitude
                     )
 
-                mapLoc.distanceFromLocation(userLoc)
+                mapLoc.distanceFromLocation(userLoc.toCLLocation())
             }
 
             completion(sorted.firstOrNull())
         }
     }
 
-    fun updateCameraRegion(selectedResult: MKMapItem? = null): MapRegionData? {
+    override fun updateCameraRegion(selectedResult: MapItemDTO?): MapRegionData? {
         if (selectedResult != null) {
-            val original:  LocationCoordinate2D = if (majorVersion >= 26) {
-                LocationCoordinate2D(
-                    latitude = selectedResult.location.coordinate.useContents { latitude },
-                    longitude = selectedResult.location.coordinate.useContents { longitude }
-                )
-            } else {
-                LocationCoordinate2D(
-                    latitude = selectedResult.placemark.coordinate.useContents { latitude },
-                    longitude = selectedResult.placemark.coordinate.useContents { longitude }
-                )
-            }
+            val original:  CoordinateDTO = selectedResult.coordinate
 
-            MapRegionData.fromCValue(makeRegion(original.toCValue()))
+            MapRegionData.fromCValue(makeRegion(original))
         } else if (_mapItems.value.isNotEmpty()) {
-            val region = computeBoundingRegion(_mapItems.value, true)
+            val region = computeBoundingRegion(_mapItems.value.map { it.toMKMapItem() }, true)
 
             if (region != null) {
                 return MapRegionData.fromCValue(region)
@@ -209,11 +206,10 @@ class LocationHandler {
             val userLoc = _userLocation.value
 
             return MapRegionData(
-                latitude = userLoc?.coordinate?.useContents { latitude } ?: 0.0,
-                longitude = userLoc?.coordinate?.useContents { longitude } ?: 0.0,
+                latitude = userLoc?.latitude ?: 0.0,
+                longitude = userLoc?.longitude ?: 0.0,
                 latitudeDelta = 0.05,
                 longitudeDelta = 0.05
-
             )
         }
         return null
@@ -263,11 +259,11 @@ class LocationHandler {
         }
     }
 
-    fun getPostalAddress(mapItem: MapItemDTO): String {
-        return mapItem.address?.fullAddress ?: mapItem.address?.shortAddress?: ""
+    override fun getPostalAddress(mapItem: MapItemDTO): String {
+        return getAddress(mapItem)
     }
 
-    fun makeRegion(coord: CValue<CLLocationCoordinate2D>, radiusInMeters: Double = 5000.0): CValue<MKCoordinateRegion> {
-        return MKCoordinateRegionMakeWithDistance(coord, radiusInMeters * 2, radiusInMeters * 2)
+    fun makeRegion(coord: CoordinateDTO, radiusInMeters: Double = 5000.0): CValue<MKCoordinateRegion> {
+        return MKCoordinateRegionMakeWithDistance(coord.toCValue(), radiusInMeters * 2, radiusInMeters * 2)
     }
 }

@@ -63,45 +63,6 @@ class ProfileViewModel(
     fun setEmail(value: String) { _email.value = value }
     fun setActiveDeleteAlert(value: DeleteAlertType?) { _activeDeleteAlert.value = value }
 
-    // MARK: - Core Logic
-
-    fun googleReauthAndDelete(onSheetPresentChange: (Boolean) -> Unit) {
-        coroutineScope.launch {
-            val result = authModel.reauthenticateWithGoogle()
-            result.onSuccess { credential ->
-                handleDeleteAccount(credential, onSheetPresentChange)
-            }.onFailure { error ->
-                setBotMessage(error.message ?: "An error occurred")
-                setIsRed(true)
-            }
-        }
-    }
-
-    fun emailReauthAndDelete(emailInput: String, passwordInput: String, onSheetPresentChange: (Boolean) -> Unit) {
-        coroutineScope.launch {
-            val result = authModel.reauthenticateWithEmail(emailInput, passwordInput)
-            result.onSuccess { credential ->
-                handleDeleteAccount(credential, onSheetPresentChange)
-            }.onFailure { error ->
-                setBotMessage(error.message ?: "An error occurred")
-                setIsRed(true)
-            }
-        }
-    }
-
-    private fun handleDeleteAccount(credential: AuthCredential, onSheetPresentChange: (Boolean) -> Unit) {
-        coroutineScope.launch {
-            val result = authRepository.deleteAccount(credential)
-            if (result.isSuccess) {
-                cleanupLocalData()
-                onSheetPresentChange(false)
-                viewManager.navigateToWelcome()
-            } else {
-                setBotMessage(result.exceptionOrNull()?.message ?: "An error occurred")
-                setIsRed(true)
-            }
-        }
-    }
 
     fun cleanupLocalData() {
         val userModel = authModel.userModel.value ?: return
