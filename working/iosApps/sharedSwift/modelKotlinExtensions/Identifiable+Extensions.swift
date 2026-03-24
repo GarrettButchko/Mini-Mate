@@ -79,3 +79,13 @@ extension MapItemDTO: @retroactive Identifiable {
         return self.placeID ?? UUID().uuidString
     }
 }
+
+extension DeleteAlertType: @retroactive Identifiable {
+    public var id: Int {
+        switch self {
+        case .google: return 0
+        case .apple:  return 1
+        case .email:  return 2
+        }
+    }
+}

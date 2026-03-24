@@ -1,0 +1,30 @@
+//
+//  PlayerIconView.swift
+//  MiniMate
+//
+//  Created by Garrett Butchko on 12/13/25.
+//
+import SwiftUI
+import shared_user
+
+struct PlayerIconView: View {
+    let player: Player
+    var isRemovable: Bool
+    var onTap: (() -> Void)?
+    var imageSize: CGFloat = 30
+    
+    var body: some View {
+        Group {
+            if isRemovable {
+                Button {
+                    onTap?()
+                } label: {
+                    PhotoIconView(photoURL: player.photoURL, name: player.name, ballColor: player.ballColor, imageSize: imageSize, background: .ultraThinMaterial)
+                }
+            } else {
+                PhotoIconView(photoURL: player.photoURL, name: player.name, ballColor: player.ballColor, imageSize: imageSize, background: .ultraThinMaterial)
+            }
+        }
+        .padding(.horizontal)
+    }
+}

@@ -15,6 +15,8 @@
 		2102E1F52F6C653700F971E4 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E1F42F6C653700F971E4 /* FirebaseDatabase */; };
 		2102E1F72F6C653B00F971E4 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E1F62F6C653B00F971E4 /* FirebaseFirestore */; };
 		2102E1F92F6C653F00F971E4 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E1F82F6C653F00F971E4 /* FirebaseStorage */; };
+		21D748632F71F6FB0014F6E7 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 21D748622F71F6FB0014F6E7 /* GoogleMobileAds */; };
+		21D748662F71F7730014F6E7 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 21D748652F71F7730014F6E7 /* ConfettiSwiftUI */; };
 		21FA50A02F70E96B00701BBB /* MarqueeText in Frameworks */ = {isa = PBXBuildFile; productRef = 21FA509F2F70E96B00701BBB /* MarqueeText */; };
 /* End PBXBuildFile section */
 
@@ -22,15 +24,49 @@
 		21B56BBF2F64A65000DF589D /* user-ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "user-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		21D748712F7215DA0014F6E7 /* Exceptions for "sharedSwift" folder in "user-ios" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"modelKotlinExtensions/KotlinBool+SwiftBool.swift",
+			);
+			target = 21B56BBE2F64A65000DF589D /* user-ios */;
+		};
+		21D7487F2F7232080014F6E7 /* Exceptions for "user-ios" folder in "user-ios" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 21B56BBE2F64A65000DF589D /* user-ios */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		21D748722F7215DA0014F6E7 /* Exceptions for "sharedSwift" folder in "Copy Bundle Resources" phase from "user-ios" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 21B56BBD2F64A65000DF589D /* Resources */;
+			membershipExceptions = (
+				"modelKotlinExtensions/KotlinBool+SwiftBool.swift",
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2155C0742F6654D3001BBDC5 /* sharedSwift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				21D748712F7215DA0014F6E7 /* Exceptions for "sharedSwift" folder in "user-ios" target */,
+				21D748722F7215DA0014F6E7 /* Exceptions for "sharedSwift" folder in "Copy Bundle Resources" phase from "user-ios" target */,
+			);
 			name = sharedSwift;
 			path = ../sharedSwift;
 			sourceTree = SOURCE_ROOT;
 		};
 		21B56BC12F64A65000DF589D /* user-ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				21D7487F2F7232080014F6E7 /* Exceptions for "user-ios" folder in "user-ios" target */,
+			);
 			path = "user-ios";
 			sourceTree = "<group>";
 		};
@@ -43,6 +79,7 @@
 			files = (
 				2102E1EF2F6C652E00F971E4 /* FirebaseAnalytics in Frameworks */,
 				2102E1F32F6C653400F971E4 /* FirebaseCore in Frameworks */,
+				21D748632F71F6FB0014F6E7 /* GoogleMobileAds in Frameworks */,
 				2102E1F52F6C653700F971E4 /* FirebaseDatabase in Frameworks */,
 				21FA50A02F70E96B00701BBB /* MarqueeText in Frameworks */,
 				210293832F6E26D200375E34 /* GoogleSignInSwift in Frameworks */,
@@ -50,6 +87,7 @@
 				2102E1F12F6C653100F971E4 /* FirebaseAuth in Frameworks */,
 				2102E1F92F6C653F00F971E4 /* FirebaseStorage in Frameworks */,
 				210293812F6E26D200375E34 /* GoogleSignIn in Frameworks */,
+				21D748662F71F7730014F6E7 /* ConfettiSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +150,8 @@
 				210293802F6E26D200375E34 /* GoogleSignIn */,
 				210293822F6E26D200375E34 /* GoogleSignInSwift */,
 				21FA509F2F70E96B00701BBB /* MarqueeText */,
+				21D748622F71F6FB0014F6E7 /* GoogleMobileAds */,
+				21D748652F71F7730014F6E7 /* ConfettiSwiftUI */,
 			);
 			productName = "user-ios";
 			productReference = 21B56BBF2F64A65000DF589D /* user-ios.app */;
@@ -145,6 +185,8 @@
 				2155C0962F6667C4001BBDC5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				2102937F2F6E26D200375E34 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				21FA509E2F70E96B00701BBB /* XCRemoteSwiftPackageReference "MarqueeText" */,
+				21D748612F71F6FB0014F6E7 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+				21D748642F71F7730014F6E7 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 21B56BC02F64A65000DF589D /* Products */;
@@ -324,12 +366,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = mm_appicon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "user-ios/user-ios.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				DEVELOPMENT_TEAM = PCUSPZK2L4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "user-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Mini Mate";
+				INFOPLIST_KEY_NSCameraUsageDescription = "";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Needed for tracking your current position.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to show where mini golf courses are close to you and to log in your game data.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -358,12 +405,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = mm_appicon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "user-ios/user-ios.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PCUSPZK2L4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "user-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Mini Mate";
+				INFOPLIST_KEY_NSCameraUsageDescription = "";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Needed for tracking your current position.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to show where mini golf courses are close to you and to log in your game data.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -427,12 +479,28 @@
 				minimumVersion = 12.10.0;
 			};
 		};
+		21D748612F71F6FB0014F6E7 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.1.0;
+			};
+		};
+		21D748642F71F7730014F6E7 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 		21FA509E2F70E96B00701BBB /* XCRemoteSwiftPackageReference "MarqueeText" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/joekndy/MarqueeText.git";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -477,6 +545,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2155C0962F6667C4001BBDC5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		21D748622F71F6FB0014F6E7 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21D748612F71F6FB0014F6E7 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+		21D748652F71F7730014F6E7 /* ConfettiSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21D748642F71F7730014F6E7 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
 		};
 		21FA509F2F70E96B00701BBB /* MarqueeText */ = {
 			isa = XCSwiftPackageProductDependency;

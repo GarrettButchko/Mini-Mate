@@ -153,9 +153,9 @@ class AuthViewModelSwift: ObservableObject {
     
     
     /// Signs in the user using Google Sign-In and Firebase via KMP
-    func signInWithGoogle(completion: @escaping (Result<Firebase_authFirebaseUser?, Error>) -> Void) {
+    func signInWithGoogle(completion: @escaping (Any?) -> Void) {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
-            completion(.failure(NSError(domain: "AuthViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing Firebase client ID"])))
+            completion(nil)
             return
         }
         let config = GIDConfiguration(clientID: clientID)
@@ -164,23 +164,23 @@ class AuthViewModelSwift: ObservableObject {
         guard let rootVC = UIApplication.shared.connectedScenes
             .compactMap({ ($0 as? UIWindowScene)?.windows.first?.rootViewController })
             .first else {
-            completion(.failure(NSError(domain: "AuthViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unable to access rootViewController"])))
+            completion(nil)
             return
         }
         
         GIDSignIn.sharedInstance.signIn(withPresenting: rootVC) { signInResult, error in
             Task { @MainActor in
-                if let error = error {
-                    completion(.failure(error)); return
+                if error != nil {
+                    completion(nil); return
                 }
                 guard let user = signInResult?.user,
                       let idToken = user.idToken?.tokenString else {
-                    completion(.failure(NSError(domain: "AuthViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Google ID token missing"])))
+                    completion(nil)
                     return
                 }
                 
                 self.kotlinVM.signInWithGoogleTokens(idToken: idToken, accessToken: user.accessToken.tokenString) { result in
-                    completion(result as! Result<Firebase_authFirebaseUser?, any Error>)
+                    completion(result)
                 }
             }
         }

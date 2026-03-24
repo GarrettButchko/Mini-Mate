@@ -19,13 +19,13 @@ extension Color {
 }
 
 struct WelcomeView: View {
-    @StateObject private var viewModel: WelcomeViewModel
+    @StateObject private var viewModel: WelcomeViewModelSwift
     let gradientColors: [Color]
 
-    init(viewManager: ViewManager, welcomeText: String = "Welcome to MiniMate", gradientColors: [Color] = [.blue, .green]) {
+    init(welcomeText: String = "Welcome to MiniMate", gradientColors: [Color] = [.blue, .green]) {
         self.gradientColors = gradientColors
         _viewModel = StateObject(
-            wrappedValue: WelcomeViewModel(viewManager: viewManager, welcomeText: welcomeText)
+            wrappedValue: WelcomeViewModelSwift(welcomeText: welcomeText)
         )
     }
 
@@ -60,7 +60,10 @@ struct WelcomeView: View {
             }
         }
         .onAppear {
-            viewModel.onAppear()
+            viewModel.kotlinVM.onAppear()
+        }
+        .onDisappear {
+            viewModel.kotlinVM.onDisappear()
         }
     }
 }

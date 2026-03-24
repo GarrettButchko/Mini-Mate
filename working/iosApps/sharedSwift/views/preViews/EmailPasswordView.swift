@@ -15,22 +15,18 @@ import shared_admin
 
 /// View for new users to sign up and create an account
 struct EmailPasswordView: View {
-    @Environment(\.modelContext) private var context
-
     @EnvironmentObject var viewManager: ViewManagerSwift
     @EnvironmentObject var authModel: AuthViewModelSwift
     
     @Binding var showEmail: Bool
-    @State var showSignUp: Bool = false
-    
     @Binding var email: String
     @Binding var password: String
     @Binding var confirmPassword: String
-    
     @Binding var guestGame: Game?
     
     let keyboardHeight: CGFloat
     
+    @State var showSignUp: Bool = false
     @State private var errorMessage: (message: String?, type: Bool) = (nil, false)
 
     typealias Field = SignInView.Field

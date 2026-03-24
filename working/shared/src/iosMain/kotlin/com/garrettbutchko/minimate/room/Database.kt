@@ -2,7 +2,6 @@ package com.garrettbutchko.minimate.room
 
 import androidx.room.RoomDatabase
 import androidx.room.Room
-import androidx.room.RoomDatabaseConstructor
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSDocumentDirectory
@@ -10,9 +9,10 @@ import platform.Foundation.NSUserDomainMask
 
 @OptIn(ExperimentalForeignApi::class)
 fun getDatabaseBuilder(): RoomDatabase.Builder<AppDatabase> {
-    val dbFilePath = documentDirectory() + "/my_room.db"
+    val dbFilePath = documentDirectory() + "/minimate.db"
     return Room.databaseBuilder<AppDatabase>(
         name = dbFilePath,
+        factory = { AppDatabaseConstructor.initialize() }
     )
 }
 
@@ -26,10 +26,4 @@ private fun documentDirectory(): String {
         error = null,
     )
     return requireNotNull(documentDirectory?.path)
-}
-
-actual object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
-    actual override fun initialize(): AppDatabase {
-        return getRoomDatabase(getDatabaseBuilder())
-    }
 }

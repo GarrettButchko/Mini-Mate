@@ -17,10 +17,8 @@ import shared_admin
 
 
 struct ProfileView: View {
-    @Environment(\.modelContext) private var context
-    
-    @EnvironmentObject var viewManager: ViewManager
-    @EnvironmentObject var authModel: AuthViewModel
+    @EnvironmentObject var viewManager: ViewManagerSwift
+    @EnvironmentObject var authModel: AuthViewModelSwift
     
     @Binding var isSheetPresent: Bool
     @State var showLoginOverlay: Bool = false
@@ -36,25 +34,7 @@ struct ProfileView: View {
     @State private var showPro: Bool = false
     #endif
     
-    @StateObject private var viewModel: ProfileViewModel
-    
-    init(
-        viewManager: ViewManager,
-        authModel: AuthViewModel,
-        isSheetPresent: Binding<Bool>,
-        context: ModelContext
-    ) {
-        self._isSheetPresent = isSheetPresent
-
-        _viewModel = StateObject(
-            wrappedValue: ProfileViewModel(
-                authModel: authModel,
-                userRepo: UserRepository(context: context), userRemoteRepo: UserRemoteRepository(),
-                localGameRepo: LocalGameRepository(context: context),
-                viewManager: viewManager
-            )
-        )
-    }
+    @StateObject private var viewModel = ProfileViewModelSwift()
 
     
     var body: some View {
@@ -79,7 +59,7 @@ struct ProfileView: View {
                         showingPhotoPicker = true
                     } label: {
                         if let photoURL = authModel.firebaseUser?.photoURL {
-                            AsyncImage(url: photoURL) { image in
+                            AsyncImage(url: URL(string: photoURL)) { image in
                                 image
                                     .resizable()
                                     .scaledToFill()
@@ -102,7 +82,7 @@ struct ProfileView: View {
                 .sheet(isPresented: $showingPhotoPicker) {
                     PhotoPicker(image: $pickedImage)
                         .onChange(of: pickedImage) { old , newImage in
-                            viewModel.managePictureChange(newImage: newImage)
+                            viewModel.kotlinVM.managePictureChange(newImage: newImage)
                         }
                 }
                 
@@ -151,7 +131,7 @@ struct ProfileView: View {
                         // Only allow edit/reset for non-social accounts
                         if let user = authModel.userModel{
                             Button("Edit Name") {
-                                viewModel.oldName = user.name
+                                viewModel.kotlinVM.oldName = user.name
                                 viewModel.editProfile = true
                             }
                             .alert("Edit Name", isPresented: $viewModel.editProfile) {
@@ -159,9 +139,9 @@ struct ProfileView: View {
                                     .characterLimit($viewModel.name, maxLength: 18)
 
                                 Button("Change") {
-                                    viewModel.saveName(user: user)
+                                    viewModel.kotlinVM.saveName()
                                 }
-                                .disabled(ProfanityFilter.containsBlockedWord(viewModel.name) || viewModel.name.isEmpty)
+                                .disabled(ProfanityFilter.shared.containsBlockedWord(text: viewModel.name) || viewModel.name.isEmpty)
 
                                 Button("Cancel", role: .cancel) {
                                     viewModel.editProfile = false
@@ -169,19 +149,19 @@ struct ProfileView: View {
                             }
                             if user.accountType.contains("email") && !user.accountType.contains("google") {
                                 Button("Password Reset") {
-                                    viewModel.passwordReset(user: user)
+                                    viewModel.kotlinVM.passwordReset(userModel: user)
                                 }
                             }
                         }
                         
                         Button("Logout") {
                             isSheetPresent = false
-                            viewModel.logOut()
+                            viewModel.kotlinVM.logOut()
                         }
                         .foregroundColor(.red)
                         
                         Button("Delete Account") {
-                            viewModel.deleteAccount(user: authModel.userModel!)
+                            viewModel.kotlinVM.deleteAccount(userModel: authModel.userModel!)
                         }
                         .foregroundColor(.red)
                         .alert(item: $viewModel.activeDeleteAlert) { alertType in
@@ -192,7 +172,7 @@ struct ProfileView: View {
                                     message: Text("This will permanently delete your account."),
                                     primaryButton: .destructive(Text("Delete")) {
                                         // call Google deletion flow
-                                        viewModel.googleReauthAndDelete(isSheetPresent: $isSheetPresent)
+                                        viewModel.googleReauthAndDelete(isSheetPresented: $isSheetPresent)
                                     },
                                     secondaryButton: .cancel()
                                 )
@@ -202,7 +182,7 @@ struct ProfileView: View {
                                     title: Text("Confirm Deletion"),
                                     message: Text("This will permanently delete your account."),
                                     primaryButton: .destructive(Text("Delete")) {
-                                        viewModel.startAppleReauthAndDelete(isSheetPresent: $isSheetPresent)
+                                        viewModel.startAppleReauthAndDelete(isSheetPresented: $isSheetPresent)
                                     },
                                     secondaryButton: .cancel()
                                 )
@@ -241,8 +221,8 @@ struct ProfileView: View {
                 
                 Button("Delete", role: .destructive) {
                     viewModel.emailReauthAndDelete(
-                        email: authModel.userModel!.email!,
-                        password: password, isSheetPresent: $isSheetPresent
+                        emailInput: authModel.userModel!.email!,
+                        passwordInput: password, isSheetPresented: $isSheetPresent
                     )
                 }
                 .disabled((password != confirmPassword) || password == "" || confirmPassword == "")

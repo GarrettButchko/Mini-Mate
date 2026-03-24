@@ -24,6 +24,6 @@ fun CoordinateDTO.toCValue(): CValue<CLLocationCoordinate2D> = cValue {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-fun CoordinateDTO.toCLLocation(): CLLocation = {
-    CLLocation(latitude = this.latitude, longitude = this.longitude)
-} as CLLocation
+fun CoordinateDTO.toCLLocation(): CLLocation {
+    return CLLocation(latitude = this.latitude, longitude = this.longitude)
+}

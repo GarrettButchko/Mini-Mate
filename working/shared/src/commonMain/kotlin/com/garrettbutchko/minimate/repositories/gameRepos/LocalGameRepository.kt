@@ -53,6 +53,17 @@ class LocalGameRepository(private val gameDao: GameDao) {
         }
     }
 
+    suspend fun deleteGuestGame(): Boolean {
+        return try {
+            gameDao.deleteGuestGames()
+            true
+        } catch (e: Exception) {
+            log.e(e) { "❌ Failed to fetch guest game safely" }
+            false
+        }
+    }
+
+
     suspend fun fetchAll(ids: List<String>): List<Game> {
         return try {
             gameDao.fetchAll(ids)

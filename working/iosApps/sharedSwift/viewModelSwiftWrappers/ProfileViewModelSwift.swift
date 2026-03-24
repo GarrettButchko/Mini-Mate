@@ -12,11 +12,12 @@ import Combine
 import shared_user
 #elseif canImport(shared_admin)
 import shared_admin
+import FirebaseAuth
 #endif
 
 @MainActor
 class ProfileViewModelSwift: ObservableObject {
-    private let kotlinVM: ProfileViewModel
+    let kotlinVM: ProfileViewModel
     
     // 1. Internal storage for observed Flow values
     @Published private var _editProfile: Bool = false
@@ -100,6 +101,24 @@ class ProfileViewModelSwift: ObservableObject {
             for await value in kotlinVM.activeDeleteAlert {
                 self._activeDeleteAlert = value
             }
+        }
+    }
+    
+    func googleReauthAndDelete(isSheetPresented: Binding<Bool>) {
+        kotlinVM.googleReauthAndDelete { value in
+            isSheetPresented.wrappedValue = value.boolValue
+        }
+    }
+        
+    func emailReauthAndDelete(emailInput: String, passwordInput: String, isSheetPresented: Binding<Bool>) {
+        kotlinVM.emailReauthAndDelete(emailInput: emailInput, passwordInput: passwordInput) { value in
+            isSheetPresented.wrappedValue = value.boolValue
+        }
+    }
+    
+    func startAppleReauthAndDelete(isSheetPresented: Binding<Bool>) {
+        kotlinVM.startAppleReauthAndDelete { value in
+            isSheetPresented.wrappedValue = value.boolValue
         }
     }
 }

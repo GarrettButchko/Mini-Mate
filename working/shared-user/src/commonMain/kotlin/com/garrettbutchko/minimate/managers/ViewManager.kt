@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 sealed class ViewType {
     data class Main(val tab: Int) : ViewType()
@@ -17,11 +18,12 @@ sealed class ViewType {
     data class Ad(val isGuest: Boolean = false) : ViewType()
     data object SignIn : ViewType()
     data object Host : ViewType()
+    data object Initializing : ViewType()
 }
 
 class ViewManager : AppNavigationManaging {
 
-    private val _currentView = MutableStateFlow<ViewType>(ViewType.Welcome)
+    private val _currentView = MutableStateFlow<ViewType>(ViewType.Initializing)
     val currentView: StateFlow<ViewType> = _currentView.asStateFlow()
     private val scope = CoroutineScope(Dispatchers.Main)
 
@@ -30,18 +32,25 @@ class ViewManager : AppNavigationManaging {
     }
 
     init {
-        val currentUser = Firebase.auth.currentUser
-        if (currentUser != null && currentUser.isEmailVerified) {
-            _currentView.value = ViewType.Main(1)
-        } else {
-            scope.launch {
+        scope.launch {
+            // Give Firebase a moment to restore the user session
+            delay(100)
+            
+            val currentUser = Firebase.auth.currentUser
+            if (currentUser != null && currentUser.isEmailVerified) {
+                _currentView.value = ViewType.Main(1)
+            } else if (currentUser != null && !currentUser.isEmailVerified) {
+                // Logged in but not verified - typical for new email signups
                 try {
                     Firebase.auth.signOut()
                 } catch (e: Exception) {
                     // Ignore
                 }
+                _currentView.value = ViewType.Welcome
+            } else {
+                // Not logged in
+                _currentView.value = ViewType.Welcome
             }
-            _currentView.value = ViewType.Welcome
         }
     }
 
@@ -61,6 +70,10 @@ class ViewManager : AppNavigationManaging {
         _currentView.value = ViewType.ScoreCard(isGuest)
     }
 
+    fun navigateToHost() {
+        _currentView.value = ViewType.Host
+    }
+
     fun navigateToAd(isGuest: Boolean = false) {
         _currentView.value = ViewType.Ad(isGuest)
     }
@@ -69,12 +82,7 @@ class ViewManager : AppNavigationManaging {
         navigateToMain(1)
     }
 
-    fun navigateToHost() {
-        _currentView.value = ViewType.Host
-    }
-
     // Equivalent to the Swift Equatable extension that ignores associated values.
-    // Useful if you need to check if the base type matches regardless of the parameters.
     fun isSameViewTypeBase(other: ViewType): Boolean {
         return this.currentView.value::class == other::class
     }

@@ -8,20 +8,20 @@ import com.garrettbutchko.minimate.dataModels.playerModels.Player
 @Entity
 data class Game(
     @PrimaryKey
-    val id: String = "",
-    val hostUserId: String = "",
-    val date: Timestamp = Timestamp.now(),
-    val completed: Boolean = false,
-    val numberOfHoles: Int = 18,
-    val started: Boolean = false,
-    val dismissed: Boolean = false,
-    val live: Boolean = false,
-    val lastUpdated: Timestamp = Timestamp.now(),
-    val courseID: String? = null,
-    val locationName: String? = null,
-    val startTime: Timestamp = Timestamp.now(),
-    val endTime: Timestamp = Timestamp.now(),
-    val players: List<Player> = emptyList() // Requires TypeConverter
+    var id: String = "",
+    var hostUserId: String = "",
+    var date: Timestamp = Timestamp.now(),
+    var completed: Boolean = false,
+    var numberOfHoles: Int = 18,
+    var started: Boolean = false,
+    var dismissed: Boolean = false,
+    var live: Boolean = false,
+    var lastUpdated: Timestamp = Timestamp.now(),
+    var courseID: String? = null,
+    var locationName: String? = null,
+    var startTime: Timestamp = Timestamp.now(),
+    var endTime: Timestamp = Timestamp.now(),
+    var players: List<Player> = emptyList() // Requires TypeConverter
 ) {
     // Keep your logic here! It works fine in Room entities
     val holeInOneLastHole: Boolean

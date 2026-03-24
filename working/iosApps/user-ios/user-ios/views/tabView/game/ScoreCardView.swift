@@ -1,0 +1,442 @@
+// ScoreCardView.swift
+// MiniMate
+//
+// Refactored to use SwiftData models and AuthViewModel
+
+import SwiftUI
+import Combine
+import shared_user
+
+struct ScoreCardView: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
+    
+    @EnvironmentObject var viewManager: ViewManagerSwift
+    @EnvironmentObject var authModel: AuthViewModelSwift
+    @EnvironmentObject var gameModel: GameViewModelSwift
+    
+    @State private var scrollOffset: CGFloat = 0
+    @State private var uuid: UUID? = nil
+    
+    @State var showInfoView: Bool = false
+    @State var showRecap: Bool = false
+    
+    @State private var hasUploaded = false   // renamed for clarity
+    
+    @State var showEndGame: Bool = false
+    
+    @State var passGame: Game? = nil
+    
+    @State private var titleHeight: CGFloat = 0
+    
+    private let logic = ScoreCardBusinessLogic()
+    
+    var isGuest: Bool
+    
+    var body: some View {
+        ZStack{
+            VStack {
+                headerView
+                scoreGridView
+                footerView
+            }
+            .padding()
+            .sheet(isPresented: $showInfoView) {
+                GameInfoView(game: gameModel.gameValue, isSheetPresent: $showInfoView)
+            }
+            .onChange(of: gameModel.gameValue.completed) { old, new in
+                if new {
+                    let finishedDTO = gameModel.gameValue.toDTO()
+                    
+                    let game = finishedDTO.toGame()
+        
+                    passGame = game
+                    endGame(game: game, isGuest: isGuest)
+                    withAnimation { showRecap = true }
+                }
+            }
+            if showRecap, let pg = passGame {
+                RecapView(course: gameModel.course, game: pg, isGuest: isGuest){
+                    Button {
+                        if NetworkChecker.companion.shared.isConnected && (isGuest || !authModel.userModel!.isPro) {
+                            viewManager.kotlinVM.navigateToAd(isGuest: isGuest)
+                        } else {
+                            viewManager.kotlinVM.navigateToMain(tab: 1)
+                        }
+                    } label: {
+                        
+                        Label(isGuest ? "Back to Sign In Menu" : "Go Back to Main Menu",
+                              systemImage: isGuest ? "person.crop.circle" : "house.fill")
+                        .foregroundStyle(.white)
+                        .fontWeight(.bold)
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 30)
+                        .background{
+                            RoundedRectangle(cornerRadius: 25)
+                                .fill(Color.blue)
+                        }
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
+        .background(.bg)
+    }
+    
+    // MARK: Header
+    private var headerView: some View {
+        HStack {
+            
+            HStack{
+                VStack(alignment: .leading){
+                    Text("Scorecard")
+                        .font(.title).fontWeight(.bold)
+                    if let locationName = gameModel.course?.name {
+                        Text(locationName)
+                            .font(.subheadline)
+                    }
+                }
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear
+                            .task(id: proxy.size) {
+                                titleHeight = proxy.size.height // Capture the size and monitor changes
+                            }
+                    }
+                }
+                
+                if let courseLogo = gameModel.course?.logo {
+                    Divider()
+                    
+                    AsyncImage(url: URL(string: courseLogo)) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } placeholder: {
+                        ProgressView()
+                    }
+                    .id(URL(string: courseLogo))
+                }
+            }
+            .frame(maxHeight: titleHeight) // Set max height to captured title height
+            Spacer()
+            Button {
+                showInfoView = true
+            } label: {
+                Image(systemName: "info.circle")
+                    .resizable()
+                    .frame(width: 20, height: 20)
+            }
+        }
+    }
+    
+    // MARK: Score Grid
+    private var scoreGridView: some View {
+        VStack {
+            playerHeaderRow
+            Divider()
+            scoreRows
+            Divider()
+            totalRow
+        }
+        .background{
+            RoundedRectangle(cornerRadius: 25)
+                .subVsColor(makeColor: gameModel.course?.scoreCardColor)
+                .cardShadow()
+        }
+        .padding(.vertical)
+    }
+    
+    /// Player Row
+    private var playerHeaderRow: some View {
+        // If there’s no host yet, render nothing (or a placeholder)
+        guard let firstPlayer = gameModel.gameValue.players.first else {
+            return AnyView(EmptyView())
+        }
+        
+        return AnyView(
+            HStack {
+                Text("Name")
+                    .frame(width: 100, height: 60)
+                    .font(.title3).fontWeight(.semibold)
+                Divider()
+                SyncedScrollViewRepresentable(scrollOffset: $scrollOffset, syncSourceID: $uuid) {
+                    HStack {
+                        ForEach(gameModel.gameValue.players) { player in
+                            // now this is safe — firstPlayer is non-nil
+                            if player.id != firstPlayer.id {
+                                Divider()
+                            }
+                            PhotoIconView(photoURL: player.photoURL,
+                                          name: player.name,
+                                          ballColor: player.ballColor,
+                                          imageSize: 30, background: .ultraThinMaterial)
+                            .frame(width: 100, height: 60)
+                        }
+                    }
+                }
+            }
+            .frame(height: 60)
+            .padding(.top)
+        )
+    }
+    
+    
+    /// Score columns and hole icons
+    private var scoreRows: some View {
+        ScrollView {
+            HStack(alignment: .top) {
+                holeNumbersColumn
+                Divider()
+                SyncedScrollViewRepresentable(scrollOffset: $scrollOffset, syncSourceID: $uuid) {
+                    PlayerColumnsView(
+                        players: gameModel.binding(for: \.players),
+                        game: gameModel.bindingForGame(), gameModel: gameModel, online: gameModel.isOnline
+                    )
+                }
+            }
+        }
+    }
+    
+    /// first column with holes and number i.e "hole 1"
+    var holeCount: Int {
+        if let course = gameModel.course, !course.customPar{
+            return Int(course.numHoles)
+        } else {
+            return Int(gameModel.game.numberOfHoles)
+        }
+    }
+    /// first column with holes and number i.e "hole 1"
+    private var holeNumbersColumn: some View {
+        VStack {
+            ForEach(1...holeCount, id: \.self) { i in
+                if i != 1 { Divider() }
+                VStack {
+                    Text("Hole \(i)")
+                        .font(.body).fontWeight(.medium)
+                    
+                    if let course = gameModel.course, course.customPar {
+                        Text("Par: \(course.pars[i - 1])")
+                            .font(.caption)
+                            .onAppear {
+                                print(course.pars[i - 1])
+                            }
+                    }
+                }
+                .frame(height: 60)
+            }
+        }
+        .frame(width: 100)
+    }
+    
+    /// totals row
+    private var totalRow: some View {
+        HStack {
+            VStack{
+                Text("Total")
+                    .font(.title3).fontWeight(.semibold)
+                if let course = gameModel.course, course.customPar {
+                    Text("Par: \(course.pars.compactMap { $0.intValue }.reduce(0, +))")
+                        .font(.caption)
+                }
+            }
+            .frame(width: 100, height: 60)
+            
+            Divider()
+            
+            SyncedScrollViewRepresentable(
+                scrollOffset:   $scrollOffset,
+                syncSourceID:   $uuid
+            ) {
+                HStack {
+                    ForEach(gameModel.game.players) { player in
+                        if player.id != gameModel.game.players.first?.id {
+                            Divider()
+                        }
+                        Text("Total: \(player.totalStrokes)")
+                            .frame(width: 100, height: 60)
+                    }
+                }
+            }
+        }
+        .frame(height: 60)
+        .padding(.bottom)
+    }
+    
+    
+    // MARK: Footer complete game button and timer
+    private var footerView: some View {
+        VStack{
+            HStack {
+                Button {
+                    showEndGame = true
+                }  label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(Color.blue)
+                            .frame(width: 200, height: 60)
+                        Text("Complete Game")
+                            .foregroundColor(.white).fontWeight(.bold)
+                    }
+                }
+                .alert("Complete Game?", isPresented: $showEndGame) {
+                    Button("Complete") {
+                        gameModel.kotlin.setCompletedGame(completedGame: true)
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("You will not be able to change your scores after this point.")
+                }
+            }
+            
+            if let course = gameModel.course, course.customAdActive {
+                Button {
+                    if let link = course.adLink, link != "" {
+                        if let url = URL(string: link) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                } label: {
+                    HStack{
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let adTitle = course.adTitle {
+                                Text(adTitle)
+                                    .foregroundStyle(.mainOpp)
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                            }
+                            
+                            if let adDescription = course.adDescription {
+                                Text(adDescription)
+                                    .foregroundStyle(.mainOpp)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.leading)
+                                    .padding(.trailing)
+                            }
+                        }
+                        Spacer()
+                        if let adImage = course.adImage, adImage != ""  {
+                            AsyncImage(url: URL(string: adImage)) { phase in
+                                switch phase {
+                                case .empty:
+                                    ProgressView()
+                                        .frame(height: 50)
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(height: 50)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        .clipped()
+                                case .failure:
+                                    Image(systemName: "photo")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(height: 50)
+                                        .foregroundColor(.gray)
+                                        .background(Color.gray.opacity(0.2))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                @unknown default:
+                                    EmptyView()
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                }
+                .frame(height: 50)
+            } else {
+                if NetworkChecker.companion.shared.isConnected && (isGuest || !authModel.userModel!.isPro) {
+                    BannerAdView(adUnitID: "ca-app-pub-8261962597301587/6716977198") // Replace with real one later
+                        .frame(height: 50)
+                        .padding(.top, 5)
+                }
+            }
+        }
+        .padding(.bottom)
+    }
+    
+    private func timeString(from seconds: Int) -> String {
+        let minutes = seconds / 60
+        let secs = seconds % 60
+        return String(format: "%d:%02d", minutes, secs)
+    }
+    
+    private func endGame(game: Game, isGuest: Bool = false) {
+        logic.processEndGame(hasUploaded: hasUploaded) {
+            // finish-and-persist before we pop the view
+            gameModel.kotlin.finishAndPersistGame(game: game, isGuest: isGuest)
+        } markAsUploaded: {
+            hasUploaded = true
+        }
+    }
+}
+
+// MARK: - PlayerScoreColumnView
+
+struct PlayerScoreColumnView: View {
+    @Binding var player: Player
+    @ObservedObject var gameModel: GameViewModelSwift
+    var onlineGame: Bool
+    
+    var body: some View {
+        VStack {
+            ForEach($player.holes.sorted(by: {$0.number.wrappedValue < $1.number.wrappedValue}), id: \.id) { $hole in
+                HoleRowView(hole: $hole)
+                    .onChange(of: hole.strokes) { old, new in
+                        gameModel.kotlin.pushUpdate()
+                    }
+            }
+        }
+    }
+}
+
+// MARK: - HoleRowView
+
+struct HoleRowView: View {
+    @Binding var hole: Hole
+    
+    var body: some View {
+        VStack {
+            if hole.number != 1 { Divider() }
+            NumberPickerView(
+                selectedNumber: Binding(
+                    get: { Int(hole.strokes) },
+                    set: { hole.strokes = Int32($0) }
+                ),
+                minNumber: 0,
+                maxNumber: 10
+            )
+            .frame(height: 60)
+        }
+    }
+}
+
+struct PlayerColumnsView: View {
+    @Binding var players: [Player]
+    @Binding var game: Game
+    @ObservedObject var gameModel: GameViewModelSwift
+    let online: Bool
+    
+    var body: some View {
+        HStack {
+            ForEach($players, id: \.id) { $player in
+                
+                if player.id != game.players[0].id{
+                    Divider()
+                }
+                PlayerScoreColumnView(
+                    player: $player,
+                    gameModel: gameModel,
+                    onlineGame: online
+                )
+                .frame(width: 100)
+            }
+        }
+    }
+}
+

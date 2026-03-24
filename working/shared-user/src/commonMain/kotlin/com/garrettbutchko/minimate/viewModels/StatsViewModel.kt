@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import co.touchlab.kermit.Logger
 
 class StatsViewModel(
     private val localGameRepo: LocalGameRepository,
@@ -20,6 +22,8 @@ class StatsViewModel(
     private val authModel: AuthViewModel,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
+    private val log = Logger.withTag("StatsViewModel")
+
     // MARK: - UI State
     private val _pickedSection = MutableStateFlow("Games")
     val pickedSection: StateFlow<String> = _pickedSection.asStateFlow()
@@ -57,6 +61,9 @@ class StatsViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val _allGames = MutableStateFlow<List<Game>>(emptyList())
+    val allGames: StateFlow<List<Game>> = _allGames.asStateFlow()
+
     // MARK: - Actions
 
     fun setPickedSection(section: String) {
@@ -83,12 +90,38 @@ class StatsViewModel(
         _isSharePresented.value = value
     }
 
-    fun onAppear(games: List<Game>) {
-        authModel.userModel.let {
-            if (it.value != null){
-                _analyzer.value = UserStatsAnalyzer(userModel = it.value!!, games = games)
+    suspend fun onAppear(): List<Game> {
+        val user = authModel.userModel.value
+        val gameIds = user?.gameIDs ?: emptyList()
+        
+        log.d { "📊 onAppear: user=${user?.name}, gameIDsCount=${gameIds.size}" }
+
+        // 1. Initial local fetch
+        val games = localGameRepo.fetchAll(ids = gameIds)
+        _allGames.value = games
+        log.d { "📦 Initial local fetch returned ${games.size} games" }
+
+        // 2. Update analyzer with what we have
+        if (user != null) {
+            _analyzer.value = UserStatsAnalyzer(userModel = user, games = games)
+        }
+        
+        // 3. If there are missing games locally, trigger a background refresh
+        if (user != null && NetworkChecker.shared.isConnected) {
+            coroutineScope.launch {
+                refreshFromCloudIfNeeded(user) {
+                    // Update the list again after refresh
+                    coroutineScope.launch {
+                        val updatedGames = localGameRepo.fetchAll(ids = user.gameIDs)
+                        _allGames.value = updatedGames
+                        _analyzer.value = UserStatsAnalyzer(userModel = user, games = updatedGames)
+                        log.d { "🔄 List updated after cloud refresh: ${updatedGames.size} games" }
+                    }
+                }
             }
         }
+        
+        return games
     }
 
     fun toggleSortWithCooldown() {
@@ -113,39 +146,56 @@ class StatsViewModel(
         user: UserModel,
         completion: () -> Unit
     ) {
-        if (_isCooldown2.value) return
+        if (_isCooldown2.value) {
+            log.d { "⏳ Cloud refresh on cooldown" }
+            completion()
+            return
+        }
 
         if (!NetworkChecker.shared.isConnected) {
+            log.d { "🌐 No internet, skipping cloud refresh" }
             coolDown2()
             completion()
             return
         }
 
+        log.d { "☁️ Starting cloud refresh for ${user.gameIDs.size} game IDs" }
         _isRefreshing.value = true
         
         coroutineScope.launch {
-            val missingIDs = localGameRepo.getMissingLocalGameIDs(user.gameIDs)
-            
-            if (missingIDs.isEmpty()) {
+            try {
+                val missingIDs = localGameRepo.getMissingLocalGameIDs(user.gameIDs)
+                log.d { "🔍 Missing local games count: ${missingIDs.size}" }
+                
+                if (missingIDs.isEmpty()) {
+                    log.d { "✅ No missing games locally" }
+                    _isRefreshing.value = false
+                    coolDown2()
+                    completion()
+                    return@launch
+                }
+
+                log.d { "📡 Fetching ${missingIDs.size} games from Firestore..." }
+                val remoteDTOs = remoteGameRepo.fetchAll(missingIDs)
+                log.d { "📥 Firestore returned ${remoteDTOs.size} games" }
+                
+                val remoteGames = remoteDTOs.map { it.toGame() }
+
+                if (remoteGames.isNotEmpty()) {
+                    val success = localGameRepo.save(remoteGames)
+                    if (success) {
+                        log.d { "✅ Saved ${remoteGames.size} games to local DB" }
+                    } else {
+                        log.e { "❌ Failed to save games to local DB" }
+                    }
+                }
+            } catch (e: Exception) {
+                log.e(e) { "❌ Error refreshing from cloud" }
+            } finally {
                 _isRefreshing.value = false
                 coolDown2()
                 completion()
-                return@launch
             }
-
-            val remoteDTOs = remoteGameRepo.fetchAll(missingIDs)
-            val remoteGames = remoteDTOs.map { it.toGame() }
-
-            val success = localGameRepo.save(remoteGames)
-            if (success) {
-                println("✅ Refreshed ${remoteGames.size} missing games from cloud")
-            } else {
-                println("❌ Failed saving refreshed games locally")
-            }
-
-            _isRefreshing.value = false
-            coolDown2()
-            completion()
         }
     }
 

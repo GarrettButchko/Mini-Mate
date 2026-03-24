@@ -9,28 +9,29 @@
 import SwiftUI
 import Combine
 import shared_user
+import MapKit
 
 @MainActor
 class CourseSearchViewModelSwift: ObservableObject {
     let kotlin: CourseSearchViewModel
     
     // 1. Observed properties from Kotlin Flows
-    @Published var mapCameraPosition: MapRegionData?
-    @Published var selectedMapItem: MapItemDTO?
-    @Published var mapItems: [MapItemDTO] = []
+    @Published var mapCameraPosition: MapCameraPosition = .automatic
+    @Published var selectedMapItem: MKMapItem?
+    @Published var mapItems: [MKMapItem] = []
     @Published var nameExists: [String: Bool] = [:]
     @Published var isSearchPanelVisible: Bool = false
     @Published var hasLocationAccess: Bool = false
     
     // 2. Public Getters/Setters that sync back to Kotlin
-    var cameraPosition: MapRegionData? {
+    var cameraPosition: MapCameraPosition? {
         get { mapCameraPosition }
-        set { kotlin.setMapCameraPosition(position: newValue) }
+        set { kotlin.setMapCameraPosition(position: newValue?.region?.toMapRegionData()) }
     }
     
-    var selectedItem: MapItemDTO? {
+    var selectedItem: MKMapItem? {
         get { selectedMapItem }
-        set { kotlin.setSelectedMapItem(item: newValue) }
+        set { kotlin.setSelectedMapItem(item: newValue?.toDTO()) }
     }
     
     var searchPanelVisible: Bool {
@@ -48,21 +49,23 @@ class CourseSearchViewModelSwift: ObservableObject {
         // Observe Camera Position
         Task {
             for await position in kotlin.mapCameraPosition {
-                self.mapCameraPosition = position
+                if let cameraPosition = position?.toMKCoordinateRegion() {
+                    self.mapCameraPosition = .region(cameraPosition)
+                }
             }
         }
         
         // Observe Selected Item
         Task {
             for await item in kotlin.selectedMapItem {
-                self.selectedMapItem = item
+                self.selectedMapItem = item?.toMKMapItem()
             }
         }
         
         // Observe Map Items List
         Task {
             for await items in kotlin.mapItems {
-                self.mapItems = items
+                self.mapItems = items.map({ $0.toMKMapItem() })
             }
         }
         
@@ -86,14 +89,5 @@ class CourseSearchViewModelSwift: ObservableObject {
                 self.hasLocationAccess = access.boolValue
             }
         }
-    }
-    
-    // 3. Forwarding Methods
-    func onAppear() {
-        kotlin.onAppear()
-    }
-    
-    func recenterMap() {
-        kotlin.recenterMap()
     }
 }

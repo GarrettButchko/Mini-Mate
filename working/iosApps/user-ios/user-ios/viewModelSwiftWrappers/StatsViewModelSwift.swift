@@ -25,6 +25,7 @@ class StatsViewModelSwift: ObservableObject {
     @Published private var _isCooldown2: Bool = false
     @Published private var _analyzer: UserStatsAnalyzer? = nil
     @Published private var _isRefreshing: Bool = false
+    @Published private var _allGames: [Game] = []
     
     // 2. Public Computed Properties with Getters and Setters
     var pickedSection: String {
@@ -75,6 +76,10 @@ class StatsViewModelSwift: ObservableObject {
     
     var isRefreshing: Bool {
         get { _isRefreshing }
+    }
+    
+    var allGames: [Game] {
+        get { _allGames }
     }
     
     let pickerSections: [String]
@@ -149,6 +154,12 @@ class StatsViewModelSwift: ObservableObject {
         Task {
             for await val in kotlin.isRefreshing {
                 self._isRefreshing = val.boolValue
+            }
+        }
+        
+        Task {
+            for await val in kotlin.allGames {
+                self._allGames = val
             }
         }
     }

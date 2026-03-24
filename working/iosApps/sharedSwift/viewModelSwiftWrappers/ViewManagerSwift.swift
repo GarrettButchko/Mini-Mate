@@ -15,29 +15,45 @@ import shared_admin
 #endif
 
 
+import Foundation
+import shared_user
+import FirebaseAuth // Assuming you're using the native Firebase SDK in iOS
+
 @MainActor
 class ViewManagerSwift: ObservableObject {
     let kotlinVM: ViewManager
     
-    // 1. Internal storage for the observed Flow values
-    @Published private var _currentView: ViewType = ViewType.Welcome.shared
-    
-    var currentView: ViewType {
-        get { _currentView }
-        set { kotlinVM.setCurrentView(view: newValue) }
-    }
+    @Published var currentView: ViewType
     
     init() {
-        // Assuming you have a KoinHelper or similar provider for ViewManager
-        self.kotlinVM = KoinHelperParent.shared.getViewManager() as! ViewManager
+        // 1. First, get the instance from your Koin helper
+        let vm = KoinHelperParent.shared.getViewManager() as! ViewManager
+        self.kotlinVM = vm
+        
+        // 2. Determine initial state using Swift Firebase logic
+        let currentUser = Auth.auth().currentUser
+        
+        if let user = currentUser, user.isEmailVerified {
+            self.currentView = ViewType.Main(tab: 1)
+        } else {
+            // Logic for signing out if not verified
+            Task {
+                do {
+                    try Auth.auth().signOut()
+                } catch {
+                    print("Error signing out: \(error)")
+                }
+            }
+            self.currentView = ViewType.Welcome()
+        }
+    
         setupObservations()
     }
     
     private func setupObservations() {
         Task {
-            // Observe the Kotlin StateFlow
             for await view in kotlinVM.currentView {
-                self._currentView = view
+                self.currentView = view
             }
         }
     }

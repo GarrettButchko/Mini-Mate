@@ -46,7 +46,7 @@ val sharedModule = module {
     single{ AnalyticsRepository() }
 
     // ViewModels (Using factory or viewModel keyword)
-    factory { AuthViewModel(authRepository = get(), viewManager = get(), userRepository = get()) }
+    single { AuthViewModel(authRepository = get(), viewManager = get()) }
 
     factory { ProfileViewModel(
         authModel = get(),

@@ -50,10 +50,14 @@ interface GameDao {
     suspend fun deleteGuestGames()
 
     // --- CLEANUP (Delete Unused Games) ---
+    // Fix: Using LIKE to find the ID inside the JSON string stored in UserModel.gameIDs
     @Query(
         """
         DELETE FROM Game 
-        WHERE id NOT IN (SELECT DISTINCT gameIDs FROM UserModel)
+        WHERE NOT EXISTS (
+            SELECT 1 FROM UserModel 
+            WHERE gameIDs LIKE '%' || Game.id || '%'
+        )
     """
     )
     suspend fun deleteAllUnusedGames(): Int

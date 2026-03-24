@@ -68,6 +68,9 @@ class HostViewModelSwift: ObservableObject {
         get { _showDeleteAlert }
         set { kotlin.setShowDeleteAlert(value: newValue) }
     }
+    
+    // Swift-side timer for driving the tick
+    let timer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
 
     init() {
         self.kotlin = KoinHelper.shared.getHostViewModel()
@@ -107,7 +110,6 @@ class HostViewModelSwift: ObservableObject {
         
         Task {
             for await _ in kotlin.qrCodeImage {
-                // Whenever qrCodeImage changes, update our local UIImage using the Kotlin helper
                 self._qrCodeImage = kotlin.qrCodeUIImage()
             }
         }
@@ -131,16 +133,10 @@ class HostViewModelSwift: ObservableObject {
         }
     }
     
-    // MARK: - Timer Methods
+    // MARK: - Timer Methods (Driven by Swift Timer)
     
     func tick(showHost: Binding<Bool>) {
         kotlin.tick(onTimeout: { bool in
-            showHost.wrappedValue = bool.boolValue
-        })
-    }
-    
-    func startTimer(showHost: Binding<Bool>) {
-        kotlin.startTimer(onTimeout: { bool in
             showHost.wrappedValue = bool.boolValue
         })
     }

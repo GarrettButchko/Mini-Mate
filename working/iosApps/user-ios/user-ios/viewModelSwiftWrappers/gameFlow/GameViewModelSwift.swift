@@ -22,15 +22,44 @@ class GameViewModelSwift: ObservableObject {
         get { _game }
         set { kotlin.setGame(newGame: newValue, listen: true) }
     }
+
+    /// Alias for compatibility with existing views
+    var gameValue: Game {
+        get { _game }
+    }
     
     var course: Course? {
         get { _course }
         set { kotlin.setCourse(newCourse: newValue) }
     }
+
+    var isOnline: Bool {
+        kotlin.onlineGame
+    }
+    
+    /// Two-way binding: DatePicker(..., selection: vm.binding(for: \ .date))
+    func binding<T>(for keyPath: ReferenceWritableKeyPath<Game, T>) -> Binding<T> {
+        Binding(
+            get: { self.game[keyPath: keyPath] },
+            set: { newValue in
+                self.game[keyPath: keyPath] = newValue
+                self.kotlin.pushUpdate()
+            }
+        )
+    }
+
+    func bindingForGame() -> Binding<Game> {
+        Binding(
+            get: { self.game },
+            set: { self.game = $0 }
+        )
+    }
     
     init() {
         self.kotlin = KoinHelper.shared.getGameViewModel()
+        
         let placeholderGame = Game(id: "", hostUserId: "", date: Firebase_firestoreTimestamp.companion.now(), completed: false, numberOfHoles: 18, started: false, dismissed: false, live: false, lastUpdated: Firebase_firestoreTimestamp.companion.now(), courseID: nil, locationName: "", startTime: Firebase_firestoreTimestamp.companion.now(), endTime: Firebase_firestoreTimestamp.companion.now(), players: [])
+        
         self._game = placeholderGame
         
         setupObservations()

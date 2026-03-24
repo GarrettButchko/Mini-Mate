@@ -4,6 +4,7 @@ import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
 import com.garrettbutchko.minimate.utilities.NetworkChecker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,16 +24,23 @@ open class WelcomeViewModel(
     val showLoading: StateFlow<Boolean> = _showLoading.asStateFlow()
 
     private val typingSpeedMs = 50L
-    private var animationTriggered = false
+    private var animationJob: Job? = null
 
     fun onAppear() {
-        startTypingAnimation()
+        if (_displayedText.value.isEmpty()) {
+            startTypingAnimation()
+        }
+    }
+    
+    fun onDisappear() {
+        animationJob?.cancel()
+        animationJob = null
     }
 
     private fun startTypingAnimation() {
-        coroutineScope.launch {
+        animationJob?.cancel()
+        animationJob = coroutineScope.launch {
             var currentText = ""
-            animationTriggered = false
 
             for (character in welcomeText) {
                 currentText += character
@@ -40,10 +48,7 @@ open class WelcomeViewModel(
                 delay(typingSpeedMs)
             }
 
-            if (!animationTriggered) {
-                animationTriggered = true
-                handleAnimationCompletion()
-            }
+            handleAnimationCompletion()
         }
     }
 
@@ -57,7 +62,8 @@ open class WelcomeViewModel(
     }
 
     private fun pollUntilInternet() {
-        coroutineScope.launch {
+        animationJob?.cancel()
+        animationJob = coroutineScope.launch {
             while (!networkChecker.isConnected) {
                 delay(1000)
             }

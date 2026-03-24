@@ -132,4 +132,57 @@ class ProfileViewModel(
     fun deleteAccount(userModel: UserModel) {
         setActiveDeleteAlert(getDeleteAlertType(userModel))
     }
+
+    fun googleReauthAndDelete(isSheetPresented: (Boolean) -> Unit) {
+        coroutineScope.launch {
+            val result = authModel.reauthenticateWithGoogle()
+            result.fold(
+                onSuccess = { credential ->
+                    handleDeleteAccount(
+                        credential,
+                        isSheetPresented = isSheetPresented
+                    )
+                },
+                onFailure = { error ->
+                    setBotMessage(error.message ?: "Unknown error")
+                    setIsRed(true)
+                }
+            )
+        }
+    }
+
+    fun emailReauthAndDelete(emailInput: String, passwordInput: String, isSheetPresented: (Boolean) -> Unit) {
+        coroutineScope.launch {
+            val result = authModel.reauthenticateWithEmail(emailInput, passwordInput)
+            result.fold(
+                onSuccess = { credential ->
+                    handleDeleteAccount(
+                        credential,
+                        isSheetPresented = isSheetPresented
+                    )
+                },
+                onFailure = { error ->
+                    setBotMessage(error.message ?: "Unknown error")
+                    setIsRed(true)
+                }
+            )
+        }
+    }
+
+    fun handleDeleteAccount(credential: AuthCredential, isSheetPresented: (Boolean) -> Unit) {
+        coroutineScope.launch {
+            val result = authRepository.deleteAccount(credential)
+            result.fold(
+                onSuccess = {
+                    cleanupLocalData()
+                    isSheetPresented(false)
+                    viewManager.navigateToWelcome()
+                },
+                onFailure = { error ->
+                    setBotMessage(error.message ?: "Unknown error")
+                    setIsRed(true)
+                }
+            )
+        }
+    }
 }

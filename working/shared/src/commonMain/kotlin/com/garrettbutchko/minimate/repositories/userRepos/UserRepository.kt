@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.repositories.userRepos
 
+import co.touchlab.skie.configuration.annotations.DefaultArgumentInterop
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.datamodels.UserModel
@@ -21,6 +22,7 @@ class UserRepository(
      * Replaces loadOrCreateUserAsync.
      * Uses a "Fast-First" approach: returns local immediately, then reconciles in background.
      */
+    @DefaultArgumentInterop.Enabled
     suspend fun loadOrCreateUser(
         id: String,
         firebaseUser: FirebaseUserSmallData? = null,
@@ -28,25 +30,25 @@ class UserRepository(
         signInMethod: SignInMethod? = null,
         appleId: String? = null,
         guestGame: Game? = null,
-        onImmediate: (UserModel) -> Unit
+        onUpdate: (UserModel) -> Unit
     ): UserModel {
         // 1️⃣ Local Phase: Check database first
         val local = localRepo.fetch(id)
         if (local != null) {
             log.d { "✅ Found local user immediately" }
-            onImmediate(local)
+            onUpdate(local)
 
             // 2️⃣ Background Reconcile: Don't block the UI
             repositoryScope.launch {
                 val remote = remoteRepo.fetch(id)
-                reconcile(local, remote, id, firebaseUser, name, signInMethod, appleId, guestGame)
+                reconcile(local, remote, id, firebaseUser, name, signInMethod, appleId, guestGame, onUpdate)
             }
             return local
         }
 
         // 3️⃣ No Local: Fetch remote and reconcile synchronously
         val remote = remoteRepo.fetch(id)
-        return reconcile(null, remote, id, firebaseUser, name, signInMethod, appleId, guestGame)
+        return reconcile(null, remote, id, firebaseUser, name, signInMethod, appleId, guestGame, onUpdate)
     }
 
     private suspend fun reconcile(
@@ -57,9 +59,10 @@ class UserRepository(
         name: String?,
         signInMethod: SignInMethod? = null,
         appleId: String?,
-        guestGame: Game?
+        guestGame: Game?,
+        onUpdate: (UserModel) -> Unit
     ): UserModel {
-        return when {
+        val result = when {
             local != null && remote != null -> {
                 val delta = abs(local.lastUpdated.seconds - remote.lastUpdated.seconds)
 
@@ -97,6 +100,8 @@ class UserRepository(
                 createUser(id, firebaseUser, name, signInMethod, appleId, guestGame)
             }
         }
+        onUpdate(result)
+        return result
     }
 
     private suspend fun createUser(

@@ -5,6 +5,8 @@ import com.garrettbutchko.minimate.dataModels.holeModels.Hole
 import dev.gitlive.firebase.firestore.Timestamp
 import com.garrettbutchko.minimate.dataModels.playerModels.Player
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 
 class RoomConverters {
     private val json = Json { ignoreUnknownKeys = true }

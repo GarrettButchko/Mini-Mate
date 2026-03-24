@@ -24,7 +24,7 @@ class LocationHandlerSwift: ObservableObject {
     
     var mapItems: [MKMapItem] {
         get { _mapItems }
-        set { kotlin.setMapItems(items: newValue.map({$0.toDTO()})) }
+        set { kotlin.setMapItems(items: newValue.map( {$0.toDTO()} ))}
     }
     
     var selectedItem: MKMapItem? {
@@ -46,6 +46,10 @@ class LocationHandlerSwift: ObservableObject {
         // Since LocationHandler is a class, we instantiate it directly
         self.kotlin = LocationHandler()
         setupObservations()
+    }
+
+    func requestLocationAccess() {
+        kotlin.requestLocationAccess()
     }
 
     private func setupObservations() {

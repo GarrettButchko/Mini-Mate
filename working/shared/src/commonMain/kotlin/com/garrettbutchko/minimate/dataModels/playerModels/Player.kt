@@ -5,19 +5,21 @@ import androidx.room.PrimaryKey
 import androidx.room.Ignore
 import com.garrettbutchko.minimate.dataModels.holeModels.Hole
 import com.garrettbutchko.minimate.generateUUID
+import kotlinx.serialization.Serializable
 
 
+@Serializable
 @Entity
 data class Player(
     @PrimaryKey
     val id: String = generateUUID(),
-    val userId: String,
-    val name: String,
-    val photoURL: String? = null,
-    val email: String? = null,
-    val ballColorDT: String? = null,
-    val inGame: Boolean = false,
-    val holes: List<Hole> = emptyList() // Requires Room TypeConverter
+    var userId: String,
+    var name: String,
+    var photoURL: String? = null,
+    var email: String? = null,
+    var ballColorDT: String? = null,
+    var inGame: Boolean = false,
+    var holes: List<Hole> = emptyList() // Requires Room TypeConverter
 ) {
     @Ignore
     val totalStrokes: Int = holes.sumOf { it.strokes }

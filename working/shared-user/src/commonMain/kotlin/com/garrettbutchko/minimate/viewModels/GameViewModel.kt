@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import androidx.compose.runtime.MutableState
+import com.garrettbutchko.minimate.dataModels.gameModels.GameDTO
 
 data class GuestData(
     val id: String,
@@ -71,6 +72,7 @@ class GameViewModel(
 ) {
     private val _game = MutableStateFlow(initialGame)
     val game: StateFlow<Game> = _game.asStateFlow()
+
     private val _course = MutableStateFlow(initialCourse)
     var course: StateFlow<Course?> = _course.asStateFlow()
 
@@ -443,10 +445,10 @@ class GameViewModel(
         isDismissing = false
     }
 
-    fun finishAndPersistGame(isGuest: Boolean = false) {
+    fun finishAndPersistGame(game: Game, isGuest: Boolean = false) {
         stopListening()
         
-        val finished = _game.value.copy(
+        val finished = game.copy(
             endTime = Timestamp.now(),
             live = false
         )
@@ -584,6 +586,11 @@ class GameViewModel(
             secondRotate(false)
         }
     }
+
+    suspend fun fetchGuestGame(): Game?{
+        return localGameRepository.fetchGuestGame()
+    }
+
 
     fun generateGameCode(length: Int = 6): String {
         val chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789"

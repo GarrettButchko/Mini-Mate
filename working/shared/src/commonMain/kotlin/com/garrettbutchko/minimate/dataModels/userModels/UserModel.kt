@@ -7,17 +7,17 @@ import dev.gitlive.firebase.firestore.Timestamp
 @Entity
 data class UserModel(
     @PrimaryKey
-    val googleId: String,
-    val appleId: String? = null,
-    val name: String,
-    val photoURL: String? = null,
-    val email: String? = null,
-    val ballColorDT: String? = null,
-    val isPro: Boolean = false,
-    val gameIDs: List<String> = emptyList(),
-    val lastUpdated: Timestamp = Timestamp.now(),
-    val accountType: List<String> = emptyList(),
-    val adminCourses: List<String> = emptyList()
+    var googleId: String,
+    var appleId: String? = null,
+    var name: String,
+    var photoURL: String? = null,
+    var email: String? = null,
+    var ballColorDT: String? = null,
+    var isPro: Boolean = false,
+    var gameIDs: List<String> = emptyList(),
+    var lastUpdated: Timestamp = Timestamp.now(),
+    var accountType: List<String> = emptyList(),
+    var adminCourses: List<String> = emptyList()
 ) {
     fun toDTO(): UserDTO {
         return UserDTO(

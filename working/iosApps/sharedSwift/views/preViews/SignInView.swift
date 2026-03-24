@@ -19,21 +19,16 @@ import shared_admin
 
 struct SignInView: View {
     enum Field: Hashable { case email, password, confirm }
-    
     @State var showEmailSignIn: Bool = false
     @State var errorMessage: (message: String?, type: Bool) = (nil, false)
-    
     @State var email = ""
     @State var password = ""
     @State var confirmPassword = ""
+    @State var guestGame: Game? = nil
     
-    @Environment(\.modelContext) var context
     @Environment(\.colorScheme)  var colorScheme
-    
     @EnvironmentObject var authModel : AuthViewModelSwift
     @EnvironmentObject var viewManager : ViewManagerSwift
-    
-    @State var guestGame: Game? = nil
 
     @StateObject private var keyboard = KeyboardObserver()
     @FocusState private var isTextFieldFocused: Field?
@@ -138,7 +133,6 @@ struct SignInView: View {
 
 
 struct StartButtons: View {
-    @Environment(\.modelContext) var context
     @Environment(\.colorScheme) var colorScheme
     #if MINIMATE
     @EnvironmentObject var gameModel: GameViewModelSwift
@@ -172,9 +166,9 @@ struct StartButtons: View {
                             .font(.subheadline)
                             .foregroundStyle(.mainOpp.opacity(0.6))
                         
-                       // Text("Game played on: \(guestGame.date.formatted(date: .abbreviated, time: .shortened))")
-                           // .font(.caption)
-                           // .foregroundStyle(.mainOpp.opacity(0.7))
+                        Text("Game played on: " + guestGame.date.formatted())
+                            .font(.caption)
+                            .foregroundStyle(.mainOpp.opacity(0.7))
                     }
                     
                     Spacer()
@@ -218,7 +212,7 @@ struct StartButtons: View {
                 
                 
                 Button("Play") {
-                    //gameModel.kotlinVM.createGame(guestData: GuestData(id: "guest-\(UUID().uuidString.prefix(6))", email: guestEmail == "" ? nil : guestEmail, name: guestName, ballColorDT: <#String?#>))
+                    gameModel.kotlin.createGame(online: false, guestData: GuestData(id: "guest-\(UUID().uuidString.prefix(6))", email: guestEmail == "" ? nil : guestEmail, name: guestName, ballColorDT: nil))
                     viewManager.kotlinVM.navigateToHost()
                 }
                 .disabled(
@@ -241,7 +235,7 @@ struct StartButtons: View {
             .onAppear {
                 Task {
                     do {
-                        try guestGame = await LocalGameRepository().fetchGuestGame()
+                        try guestGame = await gameModel.kotlin.fetchGuestGame()
                     } catch {
                         print("Error loading guest game: \(error)")
                     }

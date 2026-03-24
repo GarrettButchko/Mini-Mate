@@ -2,10 +2,10 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "09b5b080408be0c1dba9af0abd44b871",
+    "identityHash": "14fc28629659441df9589effb44ba570",
     "entities": [
       {
-        "tableName": "User",
+        "tableName": "UserModel",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`googleId` TEXT NOT NULL, `appleId` TEXT, `name` TEXT NOT NULL, `photoURL` TEXT, `email` TEXT, `ballColorDT` TEXT, `isPro` INTEGER NOT NULL, `gameIDs` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `accountType` TEXT NOT NULL, `adminCourses` TEXT NOT NULL, PRIMARY KEY(`googleId`))",
         "fields": [
           {
@@ -175,7 +175,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '09b5b080408be0c1dba9af0abd44b871')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '14fc28629659441df9589effb44ba570')"
     ]
   }
 }

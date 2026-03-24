@@ -129,9 +129,12 @@ class HostViewModel(
         if (!gameModel.onlineGame) return
 
         val currentTime = Clock.System.now()
-        _timeRemaining.value = calculateTimeRemaining(lastUpdated, ttl, currentTime)
+        val remaining = calculateTimeRemaining(lastUpdated, ttl, currentTime)
+        _timeRemaining.value = remaining
 
-        if (_timeRemaining.value == 0.0) {
+        if (remaining <= 0.0) {
+            stopTimer()
+            gameModel.dismissGame()
             onTimeout(false)
         }
     }
@@ -205,14 +208,14 @@ class HostViewModel(
         _showTextAndButtons.value = false
     }
 
-    fun setUp(gameModel: GameViewModel) {
+    fun setUp() {
         _qrCodeImage.value = generateQRCodeData(gameModel.game.value.id)
         coroutineScope.launch {
-            courseFind(gameModel)
+            courseFind()
         }
     }
 
-    suspend fun courseFind(gameModel: GameViewModel) {
+    suspend fun courseFind() {
         if (!_showLocationButton.value) return
         
         if (gameModel.course.value == null && !gameModel.hasLoaded) {

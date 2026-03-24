@@ -3,9 +3,7 @@ package com.garrettbutchko.minimate.interfaces
 import com.garrettbutchko.minimate.dataModels.mapModels.CoordinateDTO
 import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 import com.garrettbutchko.minimate.dataModels.MapRegionData
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 interface LocationFinding {
 
@@ -16,6 +14,8 @@ interface LocationFinding {
 
     fun setMapItems(items: List<MapItemDTO>)
     fun setSelectedItem(item: MapItemDTO?)
+
+    fun requestLocationAccess() {}
 
     fun getPostalAddress(mapItem: MapItemDTO): String
     fun updateCameraRegion(selectedResult: MapItemDTO? = null): MapRegionData?

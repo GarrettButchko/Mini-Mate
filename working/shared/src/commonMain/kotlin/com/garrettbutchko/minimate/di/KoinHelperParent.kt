@@ -2,6 +2,11 @@ package com.garrettbutchko.minimate.di
 
 import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
+import com.garrettbutchko.minimate.repositories.gameRepos.LocalGameRepository
+import com.garrettbutchko.minimate.repositories.gameRepos.RemoteGameRepository
+import com.garrettbutchko.minimate.repositories.userRepos.LocalUserRepository
+import com.garrettbutchko.minimate.repositories.userRepos.RemoteUserRepository
+import com.garrettbutchko.minimate.repositories.userRepos.UserRepository
 import com.garrettbutchko.minimate.viewModels.AuthViewModel
 import com.garrettbutchko.minimate.viewModels.GameReviewViewModel
 import com.garrettbutchko.minimate.viewModels.ProfileViewModel
@@ -24,4 +29,12 @@ object KoinHelperParent : KoinComponent {
     }
 
     fun getViewManager(): AppNavigationManaging = get()
+
+    fun getLocalGameRepo(): LocalGameRepository = get()
+    fun getRemoteGameRepo(): RemoteGameRepository = get()
+
+    fun getLocalUserRepo(): LocalUserRepository = get()
+    fun getRemoteUserRepo(): RemoteUserRepository = get()
+
+    fun getUserRepo(): UserRepository = get()
 }

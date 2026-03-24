@@ -74,11 +74,13 @@ val MKMapItem.newAddress: AddressDTO?
 
 @OptIn(ExperimentalForeignApi::class)
 fun MKMapItem.toDTO(): MapItemDTO {
+
     val version = UIDevice.currentDevice.systemVersion
     val majorVersion = version.split(".").firstOrNull()?.toIntOrNull() ?: 0
 
     val lat: Double
     val lon: Double
+
     if (majorVersion >= 26) {
         lat = this.location.coordinate.useContents { latitude }
         lon = this.location.coordinate.useContents { longitude }

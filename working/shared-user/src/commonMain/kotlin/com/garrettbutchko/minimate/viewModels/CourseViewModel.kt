@@ -119,7 +119,7 @@ class CourseViewModel(
         _position.value = locationHandler.updateCameraRegion(locationHandler.selectedItem.value)
     }
 
-    fun getDirections(mapItem: MapItemDTO) {
+    fun getDirections() {
         if (locationHandler.selectedItem.value != null) {
             mapActions.getDirections(locationHandler.selectedItem.value!!)
         }

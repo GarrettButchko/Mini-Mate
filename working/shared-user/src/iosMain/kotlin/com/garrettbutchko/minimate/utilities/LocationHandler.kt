@@ -3,7 +3,6 @@ package com.garrettbutchko.minimate.utilities
 import com.garrettbutchko.minimate.dataModels.mapModels.CoordinateDTO
 import com.garrettbutchko.minimate.dataModels.mapModels.MapItemDTO
 import com.garrettbutchko.minimate.extensions.toDTO
-import com.garrettbutchko.minimate.dataModels.LocationCoordinate2D
 import com.garrettbutchko.minimate.dataModels.MapRegionData
 import com.garrettbutchko.minimate.dataModels.fromCValue
 import com.garrettbutchko.minimate.dataModels.toCLLocation
@@ -23,11 +22,14 @@ import platform.Foundation.*
 import platform.MapKit.*
 import platform.UIKit.UIDevice
 import platform.UIKit.UIScreen
+import platform.darwin.NSObject
 
 
 @OptIn(ExperimentalForeignApi::class)
 class LocationHandler : LocationFinding {
+    private val locationManager = CLLocationManager()
     private var currentSearch: MKLocalSearch? = null
+    
     private val _mapItems = MutableStateFlow<List<MapItemDTO>>(emptyList())
     override val mapItems: StateFlow<List<MapItemDTO>> = _mapItems.asStateFlow()
 
@@ -39,6 +41,31 @@ class LocationHandler : LocationFinding {
 
     private val _hasLocationAccess = MutableStateFlow(false)
     override val hasLocationAccess: StateFlow<Boolean> = _hasLocationAccess.asStateFlow()
+
+    private val delegate = object : NSObject(), CLLocationManagerDelegateProtocol {
+        override fun locationManager(manager: CLLocationManager, didUpdateLocations: List<*>) {
+            val location = didUpdateLocations.lastOrNull() as? CLLocation ?: return
+            _userLocation.value = CoordinateDTO(
+                latitude = location.coordinate.useContents { latitude },
+                longitude = location.coordinate.useContents { longitude }
+            )
+        }
+
+        override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
+            updatePermissionStatus(manager.authorizationStatus)
+        }
+
+        @Suppress("CONFLICTING_OVERLOADS")
+        override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
+            updatePermissionStatus(didChangeAuthorizationStatus)
+        }
+    }
+
+    init {
+        locationManager.delegate = delegate
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        updatePermissionStatus(locationManager.authorizationStatus)
+    }
 
     override fun setMapItems(items: List<MapItemDTO>) {
         _mapItems.value = items
@@ -59,9 +86,17 @@ class LocationHandler : LocationFinding {
     val version = UIDevice.currentDevice.systemVersion
     val majorVersion = version.split(".").firstOrNull()?.toIntOrNull() ?: 0
 
-    init {
-        val status = CLLocationManager.authorizationStatus()
-        _hasLocationAccess.value = (status == kCLAuthorizationStatusAuthorizedWhenInUse || status == kCLAuthorizationStatusAuthorizedAlways)
+    override fun requestLocationAccess() {
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+    }
+
+    private fun updatePermissionStatus(status: CLAuthorizationStatus) {
+        val hasAccess = (status == kCLAuthorizationStatusAuthorizedWhenInUse || status == kCLAuthorizationStatusAuthorizedAlways)
+        _hasLocationAccess.value = hasAccess
+        if (hasAccess) {
+            locationManager.startUpdatingLocation()
+        }
     }
 
     fun performSearch(
@@ -122,8 +157,6 @@ class LocationHandler : LocationFinding {
         }
     }
 
-    // NOTE: Returns `MKCoordinateRegion?` instead of SwiftUI's `MapCameraPosition`. 
-    // You can wrap the returned region in `MapCameraPosition.region(...)` from the Swift side.
     override fun searchNearbyCourses(
         upwardOffset: Double,
         latitudeDelta: Double,
@@ -138,6 +171,7 @@ class LocationHandler : LocationFinding {
         
         val userLoc = _userLocation.value
         if (userLoc == null) {
+            requestLocationAccess()
             completion(false, null)
             return
         }
@@ -158,6 +192,7 @@ class LocationHandler : LocationFinding {
     override fun findClosestMiniGolf(completion: (MapItemDTO?) -> Unit) {
         val userLoc = _userLocation.value
         if (userLoc == null) {
+            requestLocationAccess()
             completion(null)
             return
         }
@@ -195,7 +230,7 @@ class LocationHandler : LocationFinding {
         if (selectedResult != null) {
             val original:  CoordinateDTO = selectedResult.coordinate
 
-            MapRegionData.fromCValue(makeRegion(original))
+            return MapRegionData.fromCValue(makeRegion(original))
         } else if (_mapItems.value.isNotEmpty()) {
             val region = computeBoundingRegion(_mapItems.value.map { it.toMKMapItem() }, true)
 

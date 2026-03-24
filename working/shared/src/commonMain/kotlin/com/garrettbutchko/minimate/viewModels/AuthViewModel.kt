@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.viewModels
 
+import co.touchlab.skie.configuration.annotations.DefaultArgumentInterop
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.dataModels.gameModels.Game
 import com.garrettbutchko.minimate.datamodels.UserModel
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
 import dev.gitlive.firebase.auth.EmailAuthProvider
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 data class FirebaseUserSmallData (
     val uid: String,
@@ -28,9 +31,12 @@ data class FirebaseUserSmallData (
 open class AuthViewModel(
     val authRepository: FirebaseAuthRepository = FirebaseAuthRepository(),
     val viewManager: AppNavigationManaging,
-    val userRepository: UserRepository,
     val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
-) {
+) : KoinComponent {
+    
+    // Breaking circular dependency with lazy injection
+    val userRepository: UserRepository by inject()
+
     private val log = Logger.withTag("AuthViewModel")
 
     private val _firebaseUser = MutableStateFlow<FirebaseUser?>(authRepository.currentUser)
@@ -93,6 +99,7 @@ open class AuthViewModel(
         }
     }
 
+    @DefaultArgumentInterop.Enabled
     suspend fun deleteAccount(credential: AuthCredential? = null): Result<Unit> {
         return if (credential != null) {
             val result = authRepository.deleteAccount(credential)
@@ -156,6 +163,7 @@ open class AuthViewModel(
         }
     }
 
+    @DefaultArgumentInterop.Enabled
     fun createOrSignInUserAndNavigateToHome(
         user: FirebaseUserSmallData,
         name: String? = null,
@@ -204,6 +212,7 @@ open class AuthViewModel(
         }
     }
 
+    @DefaultArgumentInterop.Enabled
     fun signUpUIManage(
         emailInput: String,
         passwordInput: String,
@@ -227,7 +236,7 @@ open class AuthViewModel(
                     uid = firebaseUser.uid,
                     email = firebaseUser.email,
                     displayName = firebaseUser.displayName,
-                    photoURL = firebaseUser.photoURL
+                    photoURL = null // Safe access: avoiding crash due to GitLive Firebase SDK interop issue on iOS
                 )
 
                 createOrSignInUserAndNavigateToHome(
@@ -268,7 +277,7 @@ open class AuthViewModel(
                         uid = firebaseUser.uid,
                         email = firebaseUser.email,
                         displayName = firebaseUser.displayName,
-                        photoURL = firebaseUser.photoURL
+                        photoURL = null // Safe access: avoiding crash due to GitLive Firebase SDK interop issue on iOS
                     )
                     createOrSignInUserAndNavigateToHome(
                         user = userData,
@@ -286,11 +295,12 @@ open class AuthViewModel(
         )
     }
 
+    @DefaultArgumentInterop.Enabled
     fun handleAppleSignInResult(
         result: Result<FirebaseUser?>,
-        name: String?,
-        appleId: String?,
-        guestGame: Game?,
+        name: String? = null,
+        appleId: String? = null,
+        guestGame: Game? = null,
         onErrorMessage: (String?, Boolean) -> Unit,
         onClearGuestGame: (Game?) -> Unit
     ) {
@@ -301,7 +311,7 @@ open class AuthViewModel(
                         uid = firebaseUser.uid,
                         email = firebaseUser.email,
                         displayName = firebaseUser.displayName,
-                        photoURL = firebaseUser.photoURL
+                        photoURL = null // Safe access: avoiding crash due to GitLive Firebase SDK interop issue on iOS
                     )
                     createOrSignInUserAndNavigateToHome(
                         user = userData,
@@ -322,6 +332,7 @@ open class AuthViewModel(
         )
     }
 
+    @DefaultArgumentInterop.Enabled
     fun signInUIManage(
         emailInput: String,
         passwordInput: String,
@@ -348,7 +359,7 @@ open class AuthViewModel(
                         uid = firebaseUser.uid,
                         email = firebaseUser.email,
                         displayName = firebaseUser.displayName,
-                        photoURL = firebaseUser.photoURL
+                        photoURL = null // Safe access: avoiding crash due to GitLive Firebase SDK interop issue on iOS
                     )
 
                     createOrSignInUserAndNavigateToHome(

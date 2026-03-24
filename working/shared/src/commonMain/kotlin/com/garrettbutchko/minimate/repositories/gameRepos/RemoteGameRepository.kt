@@ -9,6 +9,7 @@ import dev.gitlive.firebase.firestore.FieldPath
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
 
 class RemoteGameRepository {
 
@@ -23,6 +24,7 @@ class RemoteGameRepository {
             db.collection(collectionName).document(game.id).set(game.toDTO(), merge = true)
             Result.success(true)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             log.e(e) { "❌ Firestore save error: ${e.message}" }
             Result.failure(e)
         }
@@ -39,7 +41,8 @@ class RemoteGameRepository {
             }.awaitAll()
             Result.success(true)
         } catch (e: Exception) {
-            log.e(e) { "❌ Firestore save error: ${e.message}" }
+            if (e is CancellationException) throw e
+            log.e(e) { "❌ Firestore save multiple error: ${e.message}" }
             Result.failure(e)
         }
     }
@@ -54,6 +57,7 @@ class RemoteGameRepository {
                 null
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             log.e(e) { "❌ Firestore fetch error: ${e.message}" }
             null
         }
@@ -80,6 +84,7 @@ class RemoteGameRepository {
             val gameMap = results.associateBy { it.id }
             ids.mapNotNull { gameMap[it] }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             log.e(e) { "❌ Firestore fetchAll error: ${e.message}" }
             emptyList()
         }
@@ -91,6 +96,7 @@ class RemoteGameRepository {
             db.collection(collectionName).document(id).delete()
             Result.success(true)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             log.e(e) { "❌ Firestore delete error: ${e.message}" }
             Result.failure(e)
         }
@@ -108,6 +114,7 @@ class RemoteGameRepository {
             batch.commit()
             Result.success(true)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             log.e(e) { "❌ Firestore batch delete error: ${e.message}" }
             Result.failure(e)
         }

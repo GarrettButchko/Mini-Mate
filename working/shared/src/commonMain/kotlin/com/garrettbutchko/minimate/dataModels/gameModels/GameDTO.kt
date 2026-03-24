@@ -6,19 +6,19 @@ import dev.gitlive.firebase.firestore.Timestamp
 
 @Serializable
 data class GameDTO(
-    val id: String,
-    val hostUserId: String,
-    val date: Timestamp,
+    val id: String = "",
+    val hostUserId: String = "",
+    val date: Timestamp = Timestamp.now(),
     val completed: Boolean = false,
-    val numberOfHoles: Int,
+    val numberOfHoles: Int = 18,
     val started: Boolean = false,
     val dismissed: Boolean = false,
     val live: Boolean = false,
-    val lastUpdated: Timestamp,
+    val lastUpdated: Timestamp = Timestamp.now(),
     val courseID: String? = null,
     val locationName: String? = null,
-    val startTime: Timestamp,
-    val endTime: Timestamp,
+    val startTime: Timestamp = Timestamp.now(),
+    val endTime: Timestamp = Timestamp.now(),
     val players: List<PlayerDTO> = emptyList()
 ){
     fun toGame(): Game {
