@@ -405,10 +405,7 @@ struct TotalScoresContentView: View {
                     Divider()
                 }
 
-                // Calculate the total dynamically in Swift
-                let calculatedTotal = player.holes.reduce(0) { $0 + Int($1.strokes) }
-
-                Text("Total: \(calculatedTotal)")
+                Text("Total: \(player.totalStrokes)")
                     .frame(width: 100, height: 60)
             }
         }
