@@ -16,11 +16,13 @@ class GameViewModelSwift: ObservableObject {
     // 1. Observed properties from Kotlin Flows
     @Published private var _game: Game
     @Published private var _course: Course?
-    
+
     // 2. Public Computed Properties with Getters and Setters
     var game: Game {
         get { _game }
-        set { kotlin.setGame(newGame: newValue, listen: true) }
+        set {
+            kotlin.setGame(newGame: newValue, listen: true)
+        }
     }
 
     /// Alias for compatibility with existing views
@@ -51,7 +53,10 @@ class GameViewModelSwift: ObservableObject {
     func bindingForGame() -> Binding<Game> {
         Binding(
             get: { self.game },
-            set: { self.game = $0 }
+            set: {
+                self.objectWillChange.send() // Notify observers of the upcoming change
+                self.game = $0
+            }
         )
     }
     

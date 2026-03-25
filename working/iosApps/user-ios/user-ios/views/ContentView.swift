@@ -54,16 +54,6 @@ struct ContentView: View {
     @ViewBuilder
     private var viewContent: some View {
         switch onEnum(of: viewManager.currentView) {
-        case .initializing:
-            ZStack {
-                RoundedRectangle(cornerRadius: 25)
-                    .background(LinearGradient(colors: [.blue, .green], startPoint: .top, endPoint: .bottom))
-                    .ignoresSafeArea()
-                    
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-            }
         case .main(tab: let main):
             MainTabView(selectedTab: Int(main.tab))
         case .welcome:

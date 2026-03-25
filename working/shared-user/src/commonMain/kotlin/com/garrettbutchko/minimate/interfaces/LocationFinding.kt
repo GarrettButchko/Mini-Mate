@@ -18,7 +18,7 @@ interface LocationFinding {
     fun requestLocationAccess() {}
 
     fun getPostalAddress(mapItem: MapItemDTO): String
-    fun updateCameraRegion(selectedResult: MapItemDTO? = null): MapRegionData?
+    fun updateCameraRegion(): MapRegionData?
     fun findClosestMiniGolf(completion: (MapItemDTO?) -> Unit)
     fun searchNearbyCourses(upwardOffset: Double = 0.03,
                             latitudeDelta: Double = 0.1,

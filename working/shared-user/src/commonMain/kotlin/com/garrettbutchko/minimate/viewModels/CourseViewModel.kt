@@ -88,7 +88,7 @@ class CourseViewModel(
             _isUpperHalf.value = false
             locationHandler.setMapItems(emptyList())
             locationHandler.setSelectedItem(null)
-            _position.value = locationHandler.updateCameraRegion(null)
+            _position.value = locationHandler.updateCameraRegion()
         }
     }
 
@@ -111,12 +111,12 @@ class CourseViewModel(
     fun cancel() {
         _isUpperHalf.value = false
         locationHandler.setMapItems(emptyList())
-        _position.value = locationHandler.updateCameraRegion(null)
+        _position.value = locationHandler.updateCameraRegion()
     }
 
     fun updatePosition(mapItem: MapItemDTO) {
         locationHandler.setSelectedItem(mapItem)
-        _position.value = locationHandler.updateCameraRegion(locationHandler.selectedItem.value)
+        _position.value = locationHandler.updateCameraRegion()
     }
 
     fun getDirections() {

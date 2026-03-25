@@ -14,9 +14,15 @@ import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.cValue
 import kotlinx.cinterop.useContents
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import platform.CoreLocation.*
 import platform.Foundation.*
 import platform.MapKit.*
@@ -30,6 +36,8 @@ class LocationHandler : LocationFinding {
     private val locationManager = CLLocationManager()
     private var currentSearch: MKLocalSearch? = null
     
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     private val _mapItems = MutableStateFlow<List<MapItemDTO>>(emptyList())
     override val mapItems: StateFlow<List<MapItemDTO>> = _mapItems.asStateFlow()
 
@@ -72,6 +80,10 @@ class LocationHandler : LocationFinding {
     }
 
     override fun setSelectedItem(item: MapItemDTO?) {
+        _selectedMapItemToKotlin(item)
+    }
+    
+    private fun _selectedMapItemToKotlin(item: MapItemDTO?) {
         _selectedItem.value = item
     }
 
@@ -131,7 +143,7 @@ class LocationHandler : LocationFinding {
             val sorted = if (userLoc != null) {
                 items.mapNotNull { it as? MKMapItem }.sortedBy { mapItem ->
 
-                    val mapLoc: CLLocation = if (majorVersion >= 26) {
+                    val mapLoc: CLLocation = if (majorVersion >= 18) {
                         CLLocation(
                             latitude = mapItem.location.coordinate.useContents { latitude },
                             longitude = mapItem.location.coordinate.useContents { longitude }
@@ -184,7 +196,7 @@ class LocationHandler : LocationFinding {
         }
 
         performSearch(region) { success ->
-            val newPosition = if (success) updateCameraRegion(null) else null
+            val newPosition = if (success) updateCameraRegion() else null
             completion(success, newPosition)
         }
     }
@@ -226,20 +238,18 @@ class LocationHandler : LocationFinding {
         }
     }
 
-    override fun updateCameraRegion(selectedResult: MapItemDTO?): MapRegionData? {
-        if (selectedResult != null) {
-            val original:  CoordinateDTO = selectedResult.coordinate
-
-            return MapRegionData.fromCValue(makeRegion(original))
+    override fun updateCameraRegion(): MapRegionData? {
+        if (selectedItem.value != null) {
+            // Emulate the Swift behavior: small detail zoom with the item at the top
+            val region = computeSingleItemRegion(selectedItem.value!!.coordinate)
+            return MapRegionData.fromCValue(region)
         } else if (_mapItems.value.isNotEmpty()) {
             val region = computeBoundingRegion(_mapItems.value.map { it.toMKMapItem() }, true)
-
             if (region != null) {
                 return MapRegionData.fromCValue(region)
             }
         } else if (_userLocation.value != null) {
             val userLoc = _userLocation.value
-
             return MapRegionData(
                 latitude = userLoc?.latitude ?: 0.0,
                 longitude = userLoc?.longitude ?: 0.0,
@@ -250,12 +260,30 @@ class LocationHandler : LocationFinding {
         return null
     }
 
+    private fun computeSingleItemRegion(coord: CoordinateDTO): CValue<MKCoordinateRegion> {
+        // Fixed span roughly equivalent to 500m distance for a detail view
+        val latitudeDelta = 0.005
+        val longitudeDelta = 0.005
+
+        // Consistent with computeBoundingRegion:
+        // puts the coordinate at 15% from the top of the map view.
+        val topPaddingFactor = 0.15
+        val centerLat = coord.latitude - (latitudeDelta * (0.5 - topPaddingFactor))
+
+        return cValue<MKCoordinateRegion> {
+            this.center.latitude = centerLat
+            this.center.longitude = coord.longitude
+            this.span.latitudeDelta = latitudeDelta
+            this.span.longitudeDelta = longitudeDelta
+        }
+    }
+
     private fun computeBoundingRegion(items: List<MKMapItem>, offsetDownward: Boolean = false): CValue<MKCoordinateRegion>? {
         if (items.isEmpty()) return null
 
 
 
-        val coords:   List<CValue<CLLocationCoordinate2D>> = if (majorVersion >= 26) {
+        val coords:   List<CValue<CLLocationCoordinate2D>> = if (majorVersion >= 18) {
             items.map { it.location.coordinate }
         } else {
             items.map { it.placemark.coordinate }

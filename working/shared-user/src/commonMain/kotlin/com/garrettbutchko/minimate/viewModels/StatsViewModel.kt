@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import co.touchlab.kermit.Logger
+import dev.gitlive.firebase.firestore.Timestamp
 
 class StatsViewModel(
     private val localGameRepo: LocalGameRepository,
@@ -107,7 +108,7 @@ class StatsViewModel(
         }
         
         // 3. If there are missing games locally, trigger a background refresh
-        if (user != null && NetworkChecker.shared.isConnected) {
+        if (user != null && NetworkChecker.shared.isConnected && games.size != user.gameIDs.size) {
             coroutineScope.launch {
                 refreshFromCloudIfNeeded(user) {
                     // Update the list again after refresh
@@ -140,6 +141,42 @@ class StatsViewModel(
     fun presentShareSheet(text: String) {
         _shareContent.value = text
         _isSharePresented.value = true
+    }
+
+    fun deleteGame(gameID: String) {
+        val user = authModel.userModel.value ?: return
+
+        // 1. Optimistic UI update: Remove from local StateFlows immediately
+        val updatedGames = _allGames.value.filter { it.id != gameID }
+        _allGames.value = updatedGames
+        
+        // Re-calculate the analyzer stats based on the remaining games
+        _analyzer.value = UserStatsAnalyzer(userModel = user, games = updatedGames)
+
+        coroutineScope.launch {
+            try {
+                // 2. Sync with repositories
+                // First, update the user model to remove the game ID
+                val updatedGameIDs = user.gameIDs.filter { it != gameID }
+                val updatedUser = user.copy(gameIDs = updatedGameIDs, lastUpdated = Timestamp.now())
+                
+                // Save updated user (both Local and Remote)
+                authModel.userRepository.saveUnified(updatedUser.googleId, updatedUser)
+                
+                // Update the state in AuthViewModel so it propagates to other views
+                authModel.setUserModel(updatedUser)
+
+                // 3. Delete the game itself from repositories
+                localGameRepo.delete(gameID)
+                remoteGameRepo.delete(gameID)
+
+                log.d { "🗑️ Game $gameID removed from user and deleted from repositories" }
+            } catch (e: Exception) {
+                log.e(e) { "❌ Failed to complete game deletion for $gameID" }
+                // In a production app, we might want to refresh the state from DB here
+                // to rollback the optimistic UI update if the sync failed.
+            }
+        }
     }
 
     fun refreshFromCloudIfNeeded(

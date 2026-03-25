@@ -38,7 +38,7 @@ struct MainView: View {
     @State var isRotating: Bool = false
     @State var gameReview: Game? = nil
     
-    private var uniGameRepo: UnifiedGameRepository = KoinHelper.shared.getUnifiedGameRepo()
+    private var localGameRepo: LocalGameRepository = KoinHelperParent.shared.getLocalGameRepo()
     
     @State private var analyzer: UserStatsAnalyzer? = nil
     @State private var analyzerTask: Task<Void, Never>? = nil
@@ -66,10 +66,8 @@ struct MainView: View {
             .contentMargins(.horizontal, 16)
             .ignoresSafeArea(.keyboard)
         }
-        .task {
-            Task{
-                allGames = try await uniGameRepo.fetchAll(ids: authModel.userModel?.gameIDs ?? []).map({ $0.toGame() })
-            }
+        .onAppear {
+            
             updateFilteredGames()
             if NetworkChecker.companion.shared.isConnected {
                 Task {
@@ -131,7 +129,6 @@ struct MainView: View {
                     }
                 }
                 .frame(maxHeight: titleHeight)
-                
                 
                 Spacer()
                 
@@ -432,6 +429,9 @@ struct MainView: View {
     }
     
     private func updateFilteredGames() {
+        Task{
+            allGames = try await localGameRepo.fetchAll(ids: authModel.userModel?.gameIDs ?? []).map({ $0 })
+        }
         filteredGames = logic.filterUserGames(allGames: allGames, userGameIDs: userGameIDs)
         refreshAnalyzer(with: filteredGames)
     }
@@ -459,100 +459,143 @@ struct MainView: View {
         Group {
             if NetworkChecker.companion.shared.isConnected {
                 HStack{
-                    VStack{
-                        HStack{
-                            Text("Location:")
-                            Spacer()
-                        }
-                        
-                        if let item = course?.name {
+                    if locationHandler.hasLocationAccess {
+                        VStack{
                             HStack{
-                                Text(item)
-                                    .foregroundStyle(.secondary)
-                                    .truncationMode(.tail)
-                                    .transition(.move(edge: .top).combined(with: .opacity).combined(with: .blurReplace))
+                                Text("Location:")
                                 Spacer()
                             }
-                        } else {
-                            HStack{
-                                Text("No Location")
-                                    .foregroundStyle(.secondary)
-                                    .transition(.move(edge: .top).combined(with: .opacity).combined(with: .blurReplace))
-                                Spacer()
-                            }
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    
-                    if course == nil {
-                        Button {
-                            Task{
-                               await gameModel.searchNearby(isLoading: $isLoading)
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                if isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                        .scaleEffect(0.8)
-                                    Text("Searching...")
-                                        .fontWeight(.medium)
-                                } else {
-                                    Image(systemName: "magnifyingglass")
-                                        .font(.body.weight(.semibold))
-                                    Text("Search Nearby")
-                                        .fontWeight(.semibold)
+                            
+                            if let item = course?.name {
+                                HStack{
+                                    Text(item)
+                                        .foregroundStyle(.secondary)
+                                        .truncationMode(.tail)
+                                        .transition(.move(edge: .top).combined(with: .opacity).combined(with: .blurReplace))
+                                    Spacer()
+                                }
+                            } else {
+                                HStack{
+                                    Text("No Location")
+                                        .foregroundStyle(.secondary)
+                                        .transition(.move(edge: .top).combined(with: .opacity).combined(with: .blurReplace))
+                                    Spacer()
                                 }
                             }
-                            .frame(width: 160, height: 50)
-                            .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .fill(Color.blue)
-                            )
-                            .foregroundStyle(.white)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
                         }
-                        .buttonStyle(.plain)
-                        .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .blurReplace))
+                        .animation(.spring, value: course?.name)
+                        
+                        Spacer()
+                        
+                        
+                        if course == nil {
+                            Button {
+                                Task{
+                                    await gameModel.searchNearby(isLoading: $isLoading)
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                            .scaleEffect(0.8)
+                                        Text("Searching...")
+                                            .fontWeight(.medium)
+                                    } else {
+                                        Image(systemName: "magnifyingglass")
+                                            .font(.body.weight(.semibold))
+                                        Text("Search Nearby")
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                                .frame(width: 160, height: 50)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .fill(Color.blue)
+                                )
+                                .foregroundStyle(.white)
+                                .transition(.move(edge: .trailing).combined(with: .opacity))
+                                .animation(.spring, value: isLoading)
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .blurReplace))
+                            
+                        } else {
+                            // Retry Button
+                            Button(action: {
+                                Task{
+                                    await gameModel.retry(isRotating: $isRotating, isLoading: $isLoading)
+                                }
+                            }) {
+                                Image(systemName: "arrow.trianglehead.2.clockwise")
+                                    .rotationEffect(.degrees(isRotating ? 360 : 0))
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                    .frame(width: 50, height: 50)
+                                    .background(Color.blue)
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .blurReplace))
+                            .animation(.spring, value: isRotating)
+                            
+                            
+                            // Exit Button
+                            Button(action: {
+                                withAnimation {
+                                    gameModel.kotlin.exit()
+                                }
+                            }) {
+                                Image(systemName: "xmark")
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                    .frame(width: 50, height: 50)
+                                    .background(Color.red)
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .blurReplace))
+                        }
                     } else {
-                        // Retry Button
-                        Button(action: {
-                            Task{
-                               await gameModel.retry(isRotating: $isRotating, isLoading: $isLoading)
+                        VStack(spacing: 16) {
+                            Image(systemName: "location.slash.circle.fill")
+                                .font(.system(size: 50))
+                                .foregroundStyle(.secondary)
+                                .symbolEffect(.bounce, value: locationHandler.hasLocationAccess)
+
+                            VStack(spacing: 8) {
+                                Text("Location Access Required")
+                                    .font(.headline)
+                                
+                                Text("MiniMate needs your location to find nearby courses and update your position.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 32)
                             }
-                        }) {
-                            Image(systemName: "arrow.trianglehead.2.clockwise")
-                                .rotationEffect(.degrees(isRotating ? 360 : 0))
-                                .font(.title2)
-                                .foregroundColor(.white)
-                                .frame(width: 50, height: 50)
-                                .background(Color.blue)
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .blurReplace))
-                        .animation(.spring, value: isRotating)
-                        
-                        
-                        // Exit Button
-                        Button(action: {
-                            withAnimation {
-                                gameModel.kotlin.exit()
+
+                            Button {
+                                // Directs the user to the iOS Settings app
+                                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                                    UIApplication.shared.open(settingsUrl)
+                                }
+                            } label: {
+                                Text("Open Settings")
+                                    .fontWeight(.semibold)
+                                    .frame(width: 200, height: 50)
+                                    .background(Color.blue)
+                                    .foregroundStyle(.white)
+                                    .cornerRadius(15)
                             }
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                                .frame(width: 50, height: 50)
-                                .background(Color.red)
-                                .clipShape(Circle())
+                            .buttonStyle(.plain)
+                            .transition(.scale.combined(with: .opacity))
                         }
-                        .buttonStyle(.plain)
-                        .transition(.move(edge: .trailing).combined(with: .opacity).combined(with: .blurReplace))
+                        .padding()
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .animation(.spring, value: locationHandler.hasLocationAccess)
                     }
                 }
+                .animation(.spring, value: course)
                 .padding()
                 .background(){
                     RoundedRectangle(cornerRadius: 25)

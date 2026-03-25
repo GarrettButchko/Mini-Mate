@@ -19,7 +19,7 @@ val MKMapItem.idString: String
 
         val lat: Double
         val lon: Double
-        if (majorVersion >= 26) {
+        if (majorVersion >= 18) {
             lat = this.location.coordinate.useContents { latitude }
             lon = this.location.coordinate.useContents { longitude }
         } else {
@@ -35,7 +35,7 @@ val MKMapItem.newAddress: AddressDTO?
         val version = UIDevice.currentDevice.systemVersion
         val majorVersion = version.split(".").firstOrNull()?.toIntOrNull() ?: 0
 
-        if (majorVersion >= 26) {
+        if (majorVersion >= 18) {
             val address = this.address
             if (address != null) {
                 return AddressDTO(
@@ -81,7 +81,7 @@ fun MKMapItem.toDTO(): MapItemDTO {
     val lat: Double
     val lon: Double
 
-    if (majorVersion >= 26) {
+    if (majorVersion >= 18) {
         lat = this.location.coordinate.useContents { latitude }
         lon = this.location.coordinate.useContents { longitude }
     } else {
@@ -109,7 +109,7 @@ fun MKMapItem.toCourse(isSupported: Boolean = false): Course {
 
     val lat: Double
     val lon: Double
-    if (majorVersion >= 26) {
+    if (majorVersion >= 18) {
         lat = this.location.coordinate.useContents { latitude }
         lon = this.location.coordinate.useContents { longitude }
     } else {

@@ -49,7 +49,7 @@ struct ScoreCardView: View {
                     let finishedDTO = gameModel.gameValue.toDTO()
                     
                     let game = finishedDTO.toGame()
-        
+                    
                     passGame = game
                     endGame(game: game, isGuest: isGuest)
                     withAnimation { showRecap = true }
@@ -137,7 +137,7 @@ struct ScoreCardView: View {
             Divider()
             scoreRows
             Divider()
-            totalRow
+            TotalRowView(gameModel: gameModel, scrollOffset: $scrollOffset, uuid: $uuid)
         }
         .background{
             RoundedRectangle(cornerRadius: 25)
@@ -191,7 +191,7 @@ struct ScoreCardView: View {
                 SyncedScrollViewRepresentable(scrollOffset: $scrollOffset, syncSourceID: $uuid) {
                     PlayerColumnsView(
                         players: gameModel.binding(for: \.players),
-                        game: gameModel.bindingForGame(), gameModel: gameModel, online: gameModel.isOnline
+                        game: gameModel.bindingForGame(), gameModel: gameModel, onlineGame: gameModel.isOnline
                     )
                 }
             }
@@ -203,7 +203,7 @@ struct ScoreCardView: View {
         if let course = gameModel.course, !course.customPar{
             return Int(course.numHoles)
         } else {
-            return Int(gameModel.game.numberOfHoles)
+            return Int(gameModel.gameValue.numberOfHoles)
         }
     }
     /// first column with holes and number i.e "hole 1"
@@ -228,41 +228,6 @@ struct ScoreCardView: View {
         }
         .frame(width: 100)
     }
-    
-    /// totals row
-    private var totalRow: some View {
-        HStack {
-            VStack{
-                Text("Total")
-                    .font(.title3).fontWeight(.semibold)
-                if let course = gameModel.course, course.customPar {
-                    Text("Par: \(course.pars.compactMap { $0.intValue }.reduce(0, +))")
-                        .font(.caption)
-                }
-            }
-            .frame(width: 100, height: 60)
-            
-            Divider()
-            
-            SyncedScrollViewRepresentable(
-                scrollOffset:   $scrollOffset,
-                syncSourceID:   $uuid
-            ) {
-                HStack {
-                    ForEach(gameModel.game.players) { player in
-                        if player.id != gameModel.game.players.first?.id {
-                            Divider()
-                        }
-                        Text("Total: \(player.totalStrokes)")
-                            .frame(width: 100, height: 60)
-                    }
-                }
-            }
-        }
-        .frame(height: 60)
-        .padding(.bottom)
-    }
-    
     
     // MARK: Footer complete game button and timer
     private var footerView: some View {
@@ -378,18 +343,73 @@ struct ScoreCardView: View {
 
 // MARK: - PlayerScoreColumnView
 
-struct PlayerScoreColumnView: View {
-    @Binding var player: Player
+struct PlayerColumnsView: View {
+    @Binding var players: [Player]
+    @Binding var game: Game
     @ObservedObject var gameModel: GameViewModelSwift
-    var onlineGame: Bool
+    let onlineGame: Bool
     
     var body: some View {
-        VStack {
-            ForEach($player.holes.sorted(by: {$0.number.wrappedValue < $1.number.wrappedValue}), id: \.id) { $hole in
-                HoleRowView(hole: $hole)
-                    .onChange(of: hole.strokes) { old, new in
-                        gameModel.kotlin.pushUpdate()
-                    }
+        HStack {
+            ForEach($players, id: \.id) { $player in
+                if player.id != players.first?.id {
+                    Divider()
+                }
+                PlayerScoreColumnView(player: $player, gameModel: gameModel, onlineGame: onlineGame)
+                    .frame(width: 100)
+            }
+        }
+    }
+}
+
+struct TotalRowView: View {
+    @ObservedObject var gameModel: GameViewModelSwift
+    @Binding var scrollOffset: CGFloat
+    @Binding var uuid: UUID?
+
+    var body: some View {
+        HStack {
+            VStack{
+                Text("Total")
+                    .font(.title3).fontWeight(.semibold)
+                if let course = gameModel.course, course.customPar {
+                    Text("Par: \(course.pars.compactMap { Int(truncating: $0) }.reduce(0, +))")
+                    .font(.caption)
+                }
+            }
+            .frame(width: 100, height: 60)
+
+            Divider()
+
+            SyncedScrollViewRepresentable(
+                scrollOffset:   $scrollOffset,
+                syncSourceID:   $uuid
+            ) {
+                // 1. Pass the ObservedObject into a separate struct
+                TotalScoresContentView(gameModel: gameModel)
+            }
+        }
+        .frame(height: 60)
+        .padding(.bottom)
+    }
+}
+
+// 2. Create this new struct to force independent updates
+struct TotalScoresContentView: View {
+    @ObservedObject var gameModel: GameViewModelSwift
+
+    var body: some View {
+        HStack {
+            ForEach(gameModel.gameValue.players) { player in
+                if player.id != gameModel.gameValue.players.first?.id {
+                    Divider()
+                }
+
+                // Calculate the total dynamically in Swift
+                let calculatedTotal = player.holes.reduce(0) { $0 + Int($1.strokes) }
+
+                Text("Total: \(calculatedTotal)")
+                    .frame(width: 100, height: 60)
             }
         }
     }
@@ -399,14 +419,22 @@ struct PlayerScoreColumnView: View {
 
 struct HoleRowView: View {
     @Binding var hole: Hole
-    
+    @ObservedObject var gameModel: GameViewModelSwift
+
     var body: some View {
         VStack {
             if hole.number != 1 { Divider() }
+
             NumberPickerView(
                 selectedNumber: Binding(
                     get: { Int(hole.strokes) },
-                    set: { hole.strokes = Int32($0) }
+                    set: { new in
+                        print("DEBUG: Changing hole \(hole.number) to \(new) strokes.")
+                        hole.strokes = Int32(new)
+
+                        // Force TotalRowView to redraw
+                        gameModel.objectWillChange.send()
+                    }
                 ),
                 minNumber: 0,
                 maxNumber: 10
@@ -415,26 +443,18 @@ struct HoleRowView: View {
         }
     }
 }
-
-struct PlayerColumnsView: View {
-    @Binding var players: [Player]
-    @Binding var game: Game
+struct PlayerScoreColumnView: View {
+    @Binding var player: Player
     @ObservedObject var gameModel: GameViewModelSwift
-    let online: Bool
+    var onlineGame: Bool
     
     var body: some View {
-        HStack {
-            ForEach($players, id: \.id) { $player in
-                
-                if player.id != game.players[0].id{
-                    Divider()
-                }
-                PlayerScoreColumnView(
-                    player: $player,
-                    gameModel: gameModel,
-                    onlineGame: online
-                )
-                .frame(width: 100)
+        VStack {
+            ForEach($player.holes.sorted(by: {$0.number.wrappedValue < $1.number.wrappedValue}), id: \.id) { $hole in
+                HoleRowView(hole: $hole, gameModel: gameModel)
+                    .onChange(of: hole.strokes) { new, old in
+                        gameModel.kotlin.pushUpdate()
+                    }
             }
         }
     }

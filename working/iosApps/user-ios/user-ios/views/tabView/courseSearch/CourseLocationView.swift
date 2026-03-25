@@ -13,81 +13,89 @@ import shared_user
 
 // MARK: - Course Result View
 struct CourseResultView: View {
-    @StateObject var viewModel = CourseLocationViewModelSwift()
+    @StateObject var courseLoc = CourseLocationViewModelSwift()
     @EnvironmentObject var courseVM: CourseViewModelSwift
+    @EnvironmentObject var courseSearch: CourseSearchViewModelSwift
+
+    let courseRepo = CourseRepository()
+    
     @State private var titleHeight: CGFloat = 30
     @State private var showRetryButton: Bool = false
     
     var body: some View {
         
-            ZStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        CourseDirectionsButton()
-                        if let course = courseVM.selectedCourse, course.isSupported {
-                            CourseSupportedLocationCard(
-                                course: course,
-                                locationName: viewModel.courseName
-                            )
-                            
-                            if !course.socialLinks.isEmpty {
-                                CourseSocialMediaCard(course: course)
-                            }
-                        } else {
-                            CourseClaimButton()
-                        }
-                        
-                        CourseContactInfoCard()
-                        
-                        CourseLocationInfoCard()
-                    }
-                }
-                .mask {
-                    VStack(spacing: 0) {
-                        LinearGradient(
-                            colors: [.clear, .black],
-                            startPoint: .top,
-                            endPoint: .bottom
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    CourseDirectionsButton()
+                    if let course = courseVM.selectedCourse, course.isSupported {
+                        CourseSupportedLocationCard(
+                            course: course,
+                            locationName: courseLoc.courseName
                         )
-                        .frame(height: titleHeight)
                         
-                        Rectangle().fill(.black)
-                    }
-                }
-                .contentMargins([.horizontal, .bottom], 16)
-                .contentMargins(.top, 62)
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
-                
-                VStack {
-                    CourseResultViewHeader()
-                        .padding()
-                        .padding(.bottom, 16)
-                        .background {
-                            GeometryReader { proxy in
-                                Color.clear
-                                    .task(id: proxy.size) {
-                                        titleHeight = proxy.size.height
-                                    }
-                            }
+                        if !course.socialLinks.isEmpty {
+                            CourseSocialMediaCard(course: course)
                         }
-                    Spacer()
+                    } else {
+                        CourseClaimButton()
+                    }
+                    
+                    CourseContactInfoCard()
+                    
+                    CourseLocationInfoCard()
                 }
             }
-            .environmentObject(viewModel)
-            .onDisappear(){
-                viewModel.kotlin.close()
+            .mask {
+                VStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [.clear, .black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: titleHeight)
+                    
+                    Rectangle().fill(.black)
+                }
             }
+            .contentMargins([.horizontal, .bottom], 16)
+            .contentMargins(.top, 62)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
+            
+            VStack {
+                CourseResultViewHeader()
+                    .padding()
+                    .padding(.bottom, 16)
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear
+                                .task(id: proxy.size) {
+                                    titleHeight = proxy.size.height
+                                }
+                        }
+                    }
+                Spacer()
+            }
+        }
+        .environmentObject(courseLoc)
+        .onDisappear(){
+            courseLoc.kotlin.close()
+        }
     }
 }
 
 // MARK: - Result View Header
 struct CourseResultViewHeader: View {
-    @EnvironmentObject var viewModel: CourseLocationViewModelSwift
+    @EnvironmentObject var courseLoc: CourseLocationViewModelSwift
+    @EnvironmentObject var courseSearch: CourseSearchViewModelSwift
     
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            Button(action: viewModel.kotlin.close) {
+            Button {
+                courseLoc.kotlin.close()
+                courseSearch.kotlin.setNewMapPosition()
+            } label: {
                 Image(systemName: "arrow.left")
                     .padding(.vertical, 8)
                     .padding(.horizontal, 14)
@@ -99,7 +107,7 @@ struct CourseResultViewHeader: View {
             }
             
             MarqueeText(
-                text: viewModel.courseName,
+                text: courseLoc.courseName,
                 font: UIFont.preferredFont(forTextStyle: .title3),
                 leftFade: 16,
                 rightFade: 16,
@@ -124,12 +132,9 @@ struct CourseResultViewHeader: View {
 
 // MARK: - Directions Button
 struct CourseDirectionsButton: View {
-    @EnvironmentObject var viewModel: CourseLocationViewModelSwift
     @EnvironmentObject var courseVM: CourseViewModelSwift
-    @EnvironmentObject var locHand: LocationHandlerSwift
     
     var body: some View {
-        if locHand.selectedItem?.toDTO() != nil {
             Button(action: courseVM.kotlin.getDirections) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 15)
@@ -144,7 +149,7 @@ struct CourseDirectionsButton: View {
                     .padding()
                 }
             }
-        }
+        
     }
 }
 
@@ -244,7 +249,7 @@ struct CourseSocialMediaCard: View {
 
 // MARK: - Contact Info Card
 struct CourseContactInfoCard: View {
-    @EnvironmentObject var viewModel: CourseLocationViewModelSwift
+    @EnvironmentObject var courseLoc: CourseLocationViewModelSwift
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -254,7 +259,7 @@ struct CourseContactInfoCard: View {
                     .font(.headline)
             }
             
-            if let phone = viewModel.phoneNumber, let phoneURL = viewModel.phoneNumberURL, phoneURL.starts(with: "tel:") {
+            if let phone = courseLoc.phoneNumber, let phoneURL = courseLoc.phoneNumberURL, phoneURL.starts(with: "tel:") {
                 Link(destination: URL(string: phoneURL)!) {
                     HStack {
                         Spacer()
@@ -270,7 +275,7 @@ struct CourseContactInfoCard: View {
                 }
             }
             
-            if let url = viewModel.websiteURL, url.contains("http") {
+            if let url = courseLoc.websiteURL, url.contains("http") {
                 Link(destination: URL(string: url)!) {
                     HStack {
                         Spacer()
@@ -296,7 +301,7 @@ struct CourseContactInfoCard: View {
 
 // MARK: - Location Info Card
 struct CourseLocationInfoCard: View {
-    @EnvironmentObject var viewModel: CourseLocationViewModelSwift
+    @EnvironmentObject var courseLoc: CourseLocationViewModelSwift
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -306,11 +311,11 @@ struct CourseLocationInfoCard: View {
                     .font(.headline)
             }
             
-            Text(viewModel.courseName)
+            Text(courseLoc.courseName)
                 .font(.subheadline)
                 .fontWeight(.semibold)
             
-            Text(viewModel.postalAddress)
+            Text(courseLoc.postalAddress)
                 .font(.callout)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -323,10 +328,10 @@ struct CourseLocationInfoCard: View {
 
 // MARK: - Claim Course Button
 struct CourseClaimButton: View {
-    @EnvironmentObject var viewModel: CourseLocationViewModelSwift
+    @EnvironmentObject var courseLoc: CourseLocationViewModelSwift
     
     var body: some View {
-        Button(action: viewModel.kotlin.claimCourse) {
+        Button(action: courseLoc.kotlin.claimCourse) {
             HStack {
                 Image(systemName: "safari.fill")
                 Text("Is this your course? Click to Claim!")

@@ -1,15 +1,11 @@
 package com.garrettbutchko.minimate.managers
 
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 
 sealed class ViewType {
     data class Main(val tab: Int) : ViewType()
@@ -18,40 +14,16 @@ sealed class ViewType {
     data class Ad(val isGuest: Boolean = false) : ViewType()
     data object SignIn : ViewType()
     data object Host : ViewType()
-    data object Initializing : ViewType()
 }
 
 class ViewManager : AppNavigationManaging {
 
-    private val _currentView = MutableStateFlow<ViewType>(ViewType.Initializing)
+    private val _currentView = MutableStateFlow<ViewType>(ViewType.Welcome)
     val currentView: StateFlow<ViewType> = _currentView.asStateFlow()
     private val scope = CoroutineScope(Dispatchers.Main)
 
     fun setCurrentView(view: ViewType) {
         _currentView.value = view
-    }
-
-    init {
-        scope.launch {
-            // Give Firebase a moment to restore the user session
-            delay(100)
-            
-            val currentUser = Firebase.auth.currentUser
-            if (currentUser != null && currentUser.isEmailVerified) {
-                _currentView.value = ViewType.Main(1)
-            } else if (currentUser != null && !currentUser.isEmailVerified) {
-                // Logged in but not verified - typical for new email signups
-                try {
-                    Firebase.auth.signOut()
-                } catch (e: Exception) {
-                    // Ignore
-                }
-                _currentView.value = ViewType.Welcome
-            } else {
-                // Not logged in
-                _currentView.value = ViewType.Welcome
-            }
-        }
     }
 
     fun navigateToMain(tab: Int) {

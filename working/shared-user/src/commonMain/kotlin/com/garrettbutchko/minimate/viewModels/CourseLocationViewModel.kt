@@ -82,6 +82,7 @@ class CourseLocationViewModel(
 
     fun close() {
         locationHandler.setSelectedItem(null)
+        locationHandler.updateCameraRegion()
     }
 
     fun claimCourse() {

@@ -12,8 +12,9 @@ import shared_user
 
 // MARK: - Search Results View
 struct CourseSearchResultsView: View {
-    @EnvironmentObject var courseViewModel: CourseViewModelSwift
-    @EnvironmentObject var locationHandler: LocationHandlerSwift
+    @EnvironmentObject var courseVM: CourseViewModelSwift
+    @EnvironmentObject var courseSearch: CourseSearchViewModelSwift
+    @EnvironmentObject var locHand: LocationHandlerSwift
     @State private var showRetryButton = false
     @State var titleHeight: CGFloat = 30
     
@@ -22,7 +23,7 @@ struct CourseSearchResultsView: View {
     
     var body: some View {
         ZStack {
-            if courseViewModel.isLoadingCourses || locationHandler.mapItems.isEmpty {
+            if courseVM.isLoadingCourses || courseSearch.mapItems.isEmpty {
                 VStack(spacing: 15) {
                     ProgressView()
                         .scaleEffect(1.5)
@@ -31,7 +32,7 @@ struct CourseSearchResultsView: View {
                         .foregroundColor(.secondary)
                     if showRetryButton {
                         Button(action: {
-                            courseViewModel.kotlin.searchNearby()
+                            courseVM.kotlin.searchNearby()
                         }) {
                             Text("Try Again")
                                 .fontWeight(.semibold)
@@ -55,9 +56,9 @@ struct CourseSearchResultsView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading) {
-                        if let userCoord = locationHandler.userLocation?.coordinate {
-                            ForEach(locationHandler.mapItems, id: \.self) { mapItem in
-                                if locationHandler.mapItems.count > 0 && mapItem != locationHandler.mapItems[0]{
+                        if let userCoord = locHand.userLocation?.coordinate {
+                            ForEach(courseSearch.mapItems, id: \.self) { mapItem in
+                                if courseSearch.mapItems.count > 0 && mapItem != courseSearch.mapItems[0]{
                                     Divider()
                                 }
                                 SearchResultRow(item: mapItem, userLocation: userCoord)
@@ -98,7 +99,8 @@ struct CourseSearchResultsView: View {
                         .foregroundStyle(.mainOpp)
                     Spacer()
                     Button {
-                        courseViewModel.kotlin.cancel()
+                        courseVM.kotlin.cancel()
+                        courseSearch.kotlin.setNewMapPosition()
                     } label: {
                         Text("Cancel")
                             .frame(width: 70, height: 30)
@@ -127,7 +129,7 @@ struct CourseSearchResultsView: View {
 
 
 struct SearchResultRow: View {
-    @EnvironmentObject var VM: CourseViewModelSwift
+    @EnvironmentObject var courseVM: CourseViewModelSwift
     @EnvironmentObject var locationHandler: LocationHandlerSwift
     
     @State private var isSupported: Bool = false
@@ -152,8 +154,8 @@ struct SearchResultRow: View {
     
     var body: some View {
         Button {
-            VM.kotlin.updatePosition(mapItem: item.toDTO())
-            VM.kotlin.setCourse(course: course)
+            courseVM.kotlin.updatePosition(mapItem: item.toDTO())
+            courseVM.kotlin.setCourse(course: course)
         } label: {
             HStack{
                 VStack(alignment: .leading) {
@@ -169,7 +171,7 @@ struct SearchResultRow: View {
                 
 
                     let distanceInMiles = logic.metersToMiles(meters: distanceInMeters())
-                    let address = VM.kotlin.getPostalAddress(mapItem: item.toDTO())
+                    let address = courseVM.kotlin.getPostalAddress(mapItem: item.toDTO())
                 
                     MarqueeText(
                         text: logic.buildSubtitle(distanceInMiles: distanceInMiles, address: address),
@@ -183,7 +185,7 @@ struct SearchResultRow: View {
                 .frame(height: 50)
                 Spacer()
                 
-                if course.isSupported{
+                if course.isSupported {
                     ZStack{
                         Circle()
                             .fill(.purple.opacity(0.3))

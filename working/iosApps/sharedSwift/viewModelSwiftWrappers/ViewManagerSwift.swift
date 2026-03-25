@@ -35,16 +35,20 @@ class ViewManagerSwift: ObservableObject {
         
         if let user = currentUser, user.isEmailVerified {
             self.currentView = ViewType.Main(tab: 1)
+            vm.navigateToMain(tab: 1)
         } else {
             // Logic for signing out if not verified
-            Task {
-                do {
-                    try Auth.auth().signOut()
-                } catch {
-                    print("Error signing out: \(error)")
+            if let user = currentUser, !user.isEmailVerified {
+                Task {
+                    do {
+                        try Auth.auth().signOut()
+                    } catch {
+                        print("Error signing out: \(error)")
+                    }
                 }
             }
             self.currentView = ViewType.Welcome()
+            vm.navigateToWelcome()
         }
     
         setupObservations()

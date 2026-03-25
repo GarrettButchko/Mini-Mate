@@ -35,7 +35,18 @@ class CourseSearchViewModel(
 
     // Setters for Map and Item State
     fun setMapCameraPosition(position: MapRegionData?) {
-        _mapCameraPosition.value = position
+        // Send to courseViewModel so it remains the source of truth
+        if (position != null) {
+            courseViewModel.setPosition(position)
+        }
+    }
+
+    fun setNewMapPosition() {
+        // Use the selected item if one exists, otherwise calculate based on all items
+        val newPosition = locationHandler.updateCameraRegion()
+        if (newPosition != null) {
+            courseViewModel.setPosition(newPosition)
+        }
     }
 
     fun setMapItems(items: List<MapItemDTO>) {
@@ -46,7 +57,7 @@ class CourseSearchViewModel(
         if (_selectedMapItem.value != item) {
             _selectedMapItem.value = item
             locationHandler.setSelectedItem(item)
-            val newPosition = locationHandler.updateCameraRegion(item)
+            val newPosition = locationHandler.updateCameraRegion()
             if (newPosition != null) {
                 courseViewModel.setPosition(newPosition)
             }
@@ -112,7 +123,7 @@ class CourseSearchViewModel(
     }
 
     fun recenterMap() {
-        val newPosition = locationHandler.updateCameraRegion(_selectedMapItem.value)
+        val newPosition = locationHandler.updateCameraRegion()
         if (newPosition != null) {
             courseViewModel.setPosition(newPosition)
         }

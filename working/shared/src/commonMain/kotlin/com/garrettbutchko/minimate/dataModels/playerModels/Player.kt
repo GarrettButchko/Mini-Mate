@@ -21,11 +21,11 @@ data class Player(
     var inGame: Boolean = false,
     var holes: List<Hole> = emptyList() // Requires Room TypeConverter
 ) {
-    @Ignore
-    val totalStrokes: Int = holes.sumOf { it.strokes }
+    @get:Ignore
+    val totalStrokes: Int get() = holes.sumOf { it.strokes }
 
-    @Ignore
-    val incomplete: Boolean = holes.any { it.strokes == 0 }
+    @get:Ignore
+    val incomplete: Boolean get() = holes.any { it.strokes == 0 }
 
     fun toDTO(): PlayerDTO {
         return PlayerDTO(

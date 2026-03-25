@@ -14,18 +14,18 @@ import shared_user
 struct StatsView: View {
     
     @Environment(\.modelContext) private var context
-    @StateObject private var viewModel = StatsViewModelSwift()
+    @StateObject private var statModel = StatsViewModelSwift()
     @EnvironmentObject var viewManager: ViewManagerSwift
     @EnvironmentObject var authModel: AuthViewModelSwift
     
     var usersGames: [Game] {
-        viewModel.allGames.filter { authModel.userModel?.gameIDs.contains($0.id) == true }
+        statModel.allGames.filter { authModel.userModel?.gameIDs.contains($0.id) == true }
     }
     
     var games: [Game] {
         let filteredGames: [Game]
-        let searchLowercased = viewModel.searchText.lowercased()
-        if viewModel.searchText.isEmpty {
+        let searchLowercased = statModel.searchText.lowercased()
+        if statModel.searchText.isEmpty {
             filteredGames = usersGames
         } else {
             filteredGames = usersGames.filter {
@@ -34,7 +34,7 @@ struct StatsView: View {
                 || ($0.players.contains(where: { $0.name.lowercased().contains(searchLowercased) }))
             }}
         let sortedGames: [Game]
-        if viewModel.latest {
+        if statModel.latest {
             sortedGames = filteredGames.sorted { $0.date > $1.date }
         } else {
             sortedGames = filteredGames.sorted { $0.date < $1.date }
@@ -43,14 +43,8 @@ struct StatsView: View {
         return sortedGames
     }
     
-    
-    
     @State private var isDismissed = false
-    
-    private var uniGameRepo: UnifiedGameRepository = KoinHelper.shared.getUnifiedGameRepo()
-    
     @State var isRotating: Bool = false
-    
     @State var gameReview: Game? = nil
     
     var body: some View {
@@ -58,7 +52,7 @@ struct StatsView: View {
             VStack(spacing: 12) {
                 HStack {
                     ZStack {
-                        if viewModel.pickedSection == "Games" {
+                        if statModel.pickedSection == "Games" {
                             Text("Game Stats")
                                 .font(.title).fontWeight(.bold)
                                 .transition(.opacity.combined(with: .scale))
@@ -68,13 +62,13 @@ struct StatsView: View {
                                 .transition(.opacity.combined(with: .scale))
                         }
                     }
-                    .animation(.easeInOut(duration: 0.35), value: viewModel.pickedSection)
+                    .animation(.easeInOut(duration: 0.35), value: statModel.pickedSection)
                     
                     Spacer()
                 }
                 
-                Picker("Section", selection: $viewModel.pickedSection) {
-                    ForEach(viewModel.pickerSections, id: \.self) {
+                Picker("Section", selection: $statModel.pickedSection) {
+                    ForEach(statModel.pickerSections, id: \.self) {
                         Text($0)
                     }
                 }
@@ -82,7 +76,7 @@ struct StatsView: View {
                 
                 
                 ZStack {
-                    if viewModel.pickedSection == "Games" {
+                    if statModel.pickedSection == "Games" {
                         gamesSection
                             .transition(.asymmetric(
                                 insertion: .move(edge: .leading).combined(with: .opacity),
@@ -90,14 +84,14 @@ struct StatsView: View {
                             ))
                     } else {
                         
-                        if viewModel.analyzer?.hasGames() == true {
+                        if statModel.analyzer?.hasGames() == true {
                             overViewSection
                                 .transition(.asymmetric(
                                     insertion: .move(edge: .trailing).combined(with: .opacity),
                                     removal: .move(edge: .trailing).combined(with: .opacity)
                                 ))
                                 .onAppear {
-                                    viewModel.editOn = false
+                                    statModel.editOn = false
                                 }
                                 .contentMargins(.vertical, 12)
                         } else {
@@ -120,21 +114,21 @@ struct StatsView: View {
                             }
                             .padding(.vertical, 24)
                             .onAppear {
-                                viewModel.editOn = false
+                                statModel.editOn = false
                             }
                         }
                     }
                 }
-                .animation(.easeInOut(duration: 0.3), value: viewModel.pickedSection)
+                .animation(.easeInOut(duration: 0.3), value: statModel.pickedSection)
             }
             .background(.bg)
             .safeAreaPadding([.horizontal])
-            .sheet(isPresented: $viewModel.isSharePresented) {
-                ActivityView(activityItems: [viewModel.shareContent])
+            .sheet(isPresented: $statModel.isSharePresented) {
+                ActivityView(activityItems: [statModel.shareContent])
             }
             .onAppear{
                 Task{
-                    let _ = try await viewModel.kotlin.onAppear()
+                    let _ = try await statModel.kotlin.onAppear()
                 }
             }
         }
@@ -171,11 +165,11 @@ struct StatsView: View {
                     }
                     
                     
-                    if viewModel.isRefreshing {
+                    if statModel.isRefreshing {
                         ProgressView()
                     } else if !games.isEmpty {
                         ForEach(games) { game in
-                            GameRow(editOn: $viewModel.editOn, editingGameID: $viewModel.editingGameID, gameReview: $gameReview, game: game, presentShareSheet: viewModel.kotlin.presentShareSheet)
+                            GameRow(editOn: $statModel.editOn, editingGameID: $statModel.editingGameID, gameReview: $gameReview, game: game, presentShareSheet: statModel.kotlin.presentShareSheet)
                                 .transition(.opacity)
                                 .sheet(item: $gameReview) {
                                     gameReview = nil
@@ -221,17 +215,17 @@ struct StatsView: View {
             
             VStack{
                 HStack{
-                    SearchBarView(searchText: $viewModel.searchText)
+                    SearchBarView(searchText: $statModel.searchText)
                     
                     Button {
-                        viewModel.kotlin.toggleSortWithCooldown()
+                        statModel.kotlin.toggleSortWithCooldown()
                     } label: {
                         ZStack{
                             Circle()
                                 .ifAvailableGlassEffect()
                                 .frame(width: 50, height: 50)
                             
-                            if viewModel.latest{
+                            if statModel.latest{
                                 Image(systemName: "arrow.up")
                                     .transition(.scale)
                                     .frame(width: 60, height: 60)
@@ -259,6 +253,7 @@ struct StatsView: View {
                 Spacer()
             }
         }
+        .environmentObject(statModel)
     }
     
     private var overViewSection: some View {
@@ -266,7 +261,7 @@ struct StatsView: View {
         
         return ScrollView {
             
-            if let analyzer = viewModel.analyzer {
+            if let analyzer = statModel.analyzer {
                 VStack(spacing: 16){
                     SectionStatsView(title: "Basic Stats", spacing: spacing) {
                         HStack(spacing: spacing){
@@ -449,6 +444,7 @@ struct GameGridView: View {
 struct GameRow: View {
     @EnvironmentObject var authModel: AuthViewModelSwift
     @EnvironmentObject var viewManager: ViewManagerSwift
+    @EnvironmentObject var statModel: StatsViewModelSwift
 
     @Binding var editOn: Bool
     @Binding var editingGameID: String?
@@ -474,19 +470,8 @@ struct GameRow: View {
                         },
                               buttonOne: NetworkChecker.companion.shared.isConnected ? ButtonSkim(color: Color.blue, systemImage: "square.and.arrow.up", string: makeShareableSummary(for: game)) : nil
                     ) {
-                        if let user = authModel.userModel {
-                            withAnimation {
-                                user.gameIDs.removeAll(where: { $0 == game.id })
-                            }
-                            Task{
-                                let _ = try? await remoteUserRepo.save(userModel: authModel.userModel!, updateLastUpdated: true)
-                                // Delete the SwiftData object *after* a delay
-                                let _ = try? await remoteGameRepo.delete(id: game.id)
-
-                                sleep(200_000_000)
-
-                                let _ = try? await localGameRepo.delete(id: game.id)
-                            }
+                        withAnimation(){
+                            statModel.kotlin.deleteGame(gameID: game.id)
                         }
                     }
             }

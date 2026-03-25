@@ -152,13 +152,20 @@ class GameViewModel(
     }
 
     fun pushUpdate() {
-        if (!onlineGame) return
         val currentId = _game.value.id
         if (currentId.isEmpty() || currentId.any { it in ".#$[]" }) return
-        
+
         lastUpdated = Timestamp.now()
-        _game.value = _game.value.copy(lastUpdated = lastUpdated)
-        
+
+        // Create a new list instance to ensure SwiftUI/StateFlow observers detect the change
+        val updatedPlayers = _game.value.players.toList()
+
+        _game.value = _game.value.copy(
+            lastUpdated = lastUpdated,
+            players = updatedPlayers
+        )
+
+        if (!onlineGame) return
         liveGameRepo.addOrUpdateGame(_game.value) { _ -> }
     }
 

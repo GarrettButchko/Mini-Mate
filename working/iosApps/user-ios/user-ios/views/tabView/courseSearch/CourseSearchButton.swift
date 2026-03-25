@@ -9,11 +9,11 @@ import shared_user
 
 // MARK: - Search Button
 struct CourseSearchButton: View {
-    @EnvironmentObject var courseViewModel: CourseViewModelSwift
+    @EnvironmentObject var courseVM: CourseViewModelSwift
     
     var body: some View {
         Button {
-            courseViewModel.kotlin.searchNearby()
+            courseVM.kotlin.searchNearby()
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 25)

@@ -13,11 +13,13 @@ import shared_user
 
 struct CourseView: View {
     @StateObject var courseVM = CourseViewModelSwift()
-    @StateObject var viewModel = CourseSearchViewModelSwift()
-
+    @StateObject var courseSearch = CourseSearchViewModelSwift()
+    
+    let courseRepo = CourseRepository()
+    
     var body: some View {
         GeometryReader { geometry in
-            if viewModel.hasLocationAccess {
+            if courseSearch.hasLocationAccess {
                 ZStack {
                     mapView
                     
@@ -34,18 +36,18 @@ struct CourseView: View {
                             
                             Spacer()
                             
-                            LocationButton(action: viewModel.kotlin.recenterMap)
+                            LocationButton()
                                 .cardShadow()
                         }
                         
                         Spacer()
                         
-                        if !viewModel.isSearchPanelVisible {
+                        if !courseSearch.isSearchPanelVisible {
                             CourseSearchButton()
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         } else {
                             VStack {
-                                if viewModel.selectedMapItem != nil {
+                                if courseSearch.selectedMapItem != nil {
                                     CourseResultView()
                                         .transition(.move(edge: .trailing).combined(with: .opacity))
                                 } else {
@@ -58,12 +60,12 @@ struct CourseView: View {
                             .cardShadow()
                             .frame(height: geometry.size.height * 0.4)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .animation(.spring, value: viewModel.selectedMapItem)
+                            .animation(.spring, value: courseSearch.selectedMapItem)
                         }
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 30)
-                    .animation(.spring, value: viewModel.isSearchPanelVisible)
+                    .animation(.spring, value: courseSearch.isSearchPanelVisible)
                 }
             } else {
                 VStack {
@@ -83,16 +85,18 @@ struct CourseView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .onAppear(perform: viewModel.kotlin.onAppear)
+        .onAppear(perform: courseSearch.kotlin.onAppear)
         .environmentObject(courseVM)
-        .environmentObject(viewModel)
+        .environmentObject(courseSearch)
     }
     
+    
+    
     private var mapView: some View {
-        Map(position: $viewModel.mapCameraPosition, selection: $viewModel.selectedMapItem) {
-            ForEach(viewModel.mapItems, id: \.self) { item in
+        Map(position: $courseSearch.mapCameraPosition, selection: $courseSearch.selectedMapItem) {
+            ForEach(courseSearch.mapItems, id: \.self) { item in
                 let name = item.name ?? "Unknown"
-                let isSupported = viewModel.nameExists[name] ?? false
+                let isSupported = courseSearch.nameExists[name] ?? false
                 
                 if #available(iOS 26.0, *) {
                     Marker(name, coordinate: item.location.coordinate)
@@ -107,15 +111,54 @@ struct CourseView: View {
         .mapControls {
             MapCompass().mapControlVisibility(.hidden)
         }
-        .animation(.spring, value: viewModel.mapCameraPosition)
+        .onChange(of: courseSearch.selectedMapItem) { _, newItem in
+            Task {
+                // 1. Always update position first (even if newItem is nil)
+                let dto = newItem?.toDTO()
+                if let dto {
+                    courseVM.kotlin.updatePosition(mapItem: dto)
+                }
+                
+                guard let selectedMapItem = newItem else {
+                    // Reset if selection is cleared
+                    await MainActor.run {
+                        courseVM.selectedCourse = nil
+                    }
+                    return
+                }
+
+                // 2. Attempt to fetch from the repository
+                var foundCourse: Course? = nil
+                
+                if let name = selectedMapItem.name {
+                    do {
+                        foundCourse = try await courseRepo.fetchCourseByName(name: name)
+                    } catch {
+                        print("Fetch failed for \(name): \(error.localizedDescription)")
+                    }
+                }
+
+                // 3. Logic: If fetch returned a course, use it.
+                // Otherwise, convert the MapItem to a Course object.
+                await MainActor.run {
+                    if let fetched = foundCourse {
+                        courseVM.selectedCourse = fetched
+                    } else {
+                        courseVM.selectedCourse = selectedMapItem.toCourse(isSupported: false)
+                    }
+                }
+            }
+        }
+        .animation(.spring, value: courseSearch.mapCameraPosition)
     }
 }
 
 private struct LocationButton: View {
-    var action: () -> Void
-    
+    @EnvironmentObject var viewModel: CourseSearchViewModelSwift
     var body: some View {
-        Button(action: action) {
+        Button{
+            viewModel.kotlin.setNewMapPosition()
+        } label: {
             ZStack {
                 Circle()
                     .fill(Material.regular)
