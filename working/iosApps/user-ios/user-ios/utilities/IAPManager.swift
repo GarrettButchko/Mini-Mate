@@ -11,6 +11,7 @@ import shared_user
 
 class IAPManager: ObservableObject {
    @Published var products: [Product] = []
+   @Published var isPurchasing = false
    private var isInitialized = false
    
    init() {
@@ -44,32 +45,70 @@ class IAPManager: ObservableObject {
     }
     
     func purchase(_ product: Product, authModel: AuthViewModelSwift, showSheet: Binding<Bool>) async -> Bool {
+        print("🛒 Purchase started for product: \(product.id)")
+        
         do {
             let result = try await product.purchase()
+            
             switch result {
             case .success(let verification):
-                let transaction = try self.verifyPurchase(verification)
-                await transaction.finish()
+                print("✅ StoreKit: Purchase call successful. Verifying...")
                 
+                // Handle verification results explicitly
+                let transaction: StoreKit.Transaction
+                do {
+                    transaction = try self.verifyPurchase(verification)
+                    print("🛡️ Verification: Success for Transaction \(transaction.id)")
+                } catch {
+                    print("❌ Verification: Failed. The purchase might be tampered with or invalid: \(error)")
+                    return false
+                }
+                
+                // Finish the transaction first to tell Apple you've acknowledged it
+                await transaction.finish()
+                print("🏁 Transaction finished with Apple.")
+                
+                // Update UI
                 await MainActor.run {
                     withAnimation {
                         authModel.userModel?.isPro = true
                         showSheet.wrappedValue = false
+                        print("📱 UI: Pro status set and sheet dismissed.")
                     }
                 }
                 
+                // Sync with your backend
                 if let userModel = authModel.userModel {
-                    let _ = try await KoinHelperParent.shared.getRemoteUserRepo().save(userModel: userModel, updateLastUpdated: true)
+                    print("☁️ Remote: Attempting to save user to KoinHelper...")
+                    do {
+                        _ = try await KoinHelperParent.shared.getRemoteUserRepo().save(userModel: userModel, updateLastUpdated: true)
+                        print("✅ Remote: User saved successfully.")
+                    } catch {
+                        print("⚠️ Remote: Database sync failed, but purchase was successful locally: \(error)")
+                        // Note: You might still return true here because they DID pay.
+                    }
+                } else {
+                    print("⚠️ Remote: No userModel found in authModel to save.")
                 }
+                
                 return true
                 
-            case .userCancelled, .pending:
+            case .userCancelled:
+                print("🛑 Purchase: User cancelled the payment sheet.")
                 return false
+                
+            case .pending:
+                print("⏳ Purchase: Transaction pending (e.g., Ask to Buy enabled).")
+                return false
+                
             @unknown default:
+                print("❓ Purchase: Unknown status received.")
                 return false
             }
+            
         } catch {
-            print("Purchase failed: \(error)")
+            // This catches system-level errors (network down, iCloud issues, etc.)
+            print("🚨 Purchase: System error: \(error.localizedDescription)")
             return false
         }
     }

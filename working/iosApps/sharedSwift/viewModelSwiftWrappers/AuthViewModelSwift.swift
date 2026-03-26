@@ -149,7 +149,6 @@ class AuthViewModelSwift: ObservableObject {
             }
         )
     }
-
     
     
     /// Signs in the user using Google Sign-In and Firebase via KMP
@@ -240,3 +239,4 @@ class AuthViewModelSwift: ObservableObject {
         }
     }
 }
+

@@ -65,8 +65,11 @@ struct ProView: View {
             }
             .padding(.horizontal)
             
-            Image("LogoGold")
+            Image("logo_svg")
                 .resizable()
+                .renderingMode(.template)
+                .scaledToFit()
+                .foregroundStyle(.mainOpp)
                 .frame(width: 40, height: 40)
             
             Spacer()
@@ -81,9 +84,10 @@ struct ProView: View {
             Button {
                 Task {
                     guard let product = iapManager.products.first else {
-                        // Optional: show an alert/toast or trigger a product reload here
+                        print("No products available for purchase.")
                         return
                     }
+                    
                     let _ = await iapManager.purchase(product, authModel: authModel, showSheet: $showSheet)
                 }
             } label: {
@@ -109,7 +113,6 @@ struct ProView: View {
                     }
                 }
             }
-            
         }
     }
 }
