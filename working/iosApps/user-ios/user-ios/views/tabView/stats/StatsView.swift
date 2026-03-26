@@ -168,9 +168,17 @@ struct StatsView: View {
                     if statModel.isRefreshing {
                         ProgressView()
                     } else if !games.isEmpty {
-                        ForEach(games) { game in
-                            GameRow(editOn: $statModel.editOn, editingGameID: $statModel.editingGameID, gameReview: $gameReview, game: game, presentShareSheet: statModel.kotlin.presentShareSheet)
-                                .transition(.opacity)
+                        
+                        
+                            ForEach(games, id: \.id) { game in // Explicitly use .id to help transitions
+                                GameRow(
+                                    editOn: $statModel.editOn,
+                                    editingGameID: $statModel.editingGameID,
+                                    gameReview: $gameReview,
+                                    game: game,
+                                    presentShareSheet: statModel.kotlin.presentShareSheet
+                                )
+                                .transition(.asymmetric(insertion: .opacity, removal: .opacity.combined(with: .move(edge: .leading))))
                                 .sheet(item: $gameReview) {
                                     gameReview = nil
                                 } content: { game in
@@ -178,7 +186,8 @@ struct StatsView: View {
                                         .presentationDragIndicator(.visible)
                                 }
                                 .cardShadow()
-                        }
+                            }
+                        
                         LogoDefault(topPadding: 0)
                     } else if !authModel.userModel!.gameIDs.isEmpty && games.isEmpty {
                         // Game IDs exist but SwiftData hasn't loaded them yet - show loading state
@@ -465,15 +474,14 @@ struct GameRow: View {
                     .frame(width: proxy.size.width)
                     .transition(.opacity.combined(with: .blurReplace))
                     .swipeMod(editingID: $editingGameID, id: game.id,
-                        buttonPressFunction: {
-                            gameReview = game
-                        },
+                              buttonPressFunction: {
+                        gameReview = game
+                    },
                               buttonOne: NetworkChecker.companion.shared.isConnected ? ButtonSkim(color: Color.blue, systemImage: "square.and.arrow.up", string: makeShareableSummary(for: game)) : nil
                     ) {
-                        withAnimation(){
-                            statModel.kotlin.deleteGame(gameID: game.id)
-                        }
+                        statModel.kotlin.deleteGame(gameID: game.id)
                     }
+                    
             }
         }
         .frame(height: 250)

@@ -191,7 +191,7 @@ struct ScoreCardView: View {
                 SyncedScrollViewRepresentable(scrollOffset: $scrollOffset, syncSourceID: $uuid) {
                     PlayerColumnsView(
                         players: gameModel.binding(for: \.players),
-                        game: gameModel.bindingForGame(), gameModel: gameModel, onlineGame: gameModel.isOnline
+                        game: gameModel.bindingForGame(), gameModel: gameModel, onlineGame: gameModel.onlineGame
                     )
                 }
             }

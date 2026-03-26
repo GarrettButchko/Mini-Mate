@@ -26,6 +26,7 @@ class StatsViewModelSwift: ObservableObject {
     @Published private var _analyzer: UserStatsAnalyzer? = nil
     @Published private var _isRefreshing: Bool = false
     @Published private var _allGames: [Game] = []
+    @Published private var _gamesUpdateTrigger: Int = 0
     
     // 2. Public Computed Properties with Getters and Setters
     var pickedSection: String {
@@ -159,7 +160,9 @@ class StatsViewModelSwift: ObservableObject {
         
         Task {
             for await val in kotlin.allGames {
-                self._allGames = val
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    self._allGames = val
+                }
             }
         }
     }

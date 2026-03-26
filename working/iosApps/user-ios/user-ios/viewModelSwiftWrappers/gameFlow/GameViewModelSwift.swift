@@ -16,6 +16,7 @@ class GameViewModelSwift: ObservableObject {
     // 1. Observed properties from Kotlin Flows
     @Published private var _game: Game
     @Published private var _course: Course?
+    @Published private var _onlineGame: Bool = false
 
     // 2. Public Computed Properties with Getters and Setters
     var game: Game {
@@ -35,8 +36,9 @@ class GameViewModelSwift: ObservableObject {
         set { kotlin.setCourse(newCourse: newValue) }
     }
 
-    var isOnline: Bool {
-        kotlin.onlineGame
+    var onlineGame: Bool {
+        get { _onlineGame }
+        set { kotlin.setOnlineGame(value: newValue) }
     }
     
     /// Two-way binding: DatePicker(..., selection: vm.binding(for: \ .date))
@@ -82,6 +84,12 @@ class GameViewModelSwift: ObservableObject {
         Task {
             for await courseValue in kotlin.course {
                 self._course = courseValue
+            }
+        }
+
+        Task {
+            for await value in kotlin.onlineGame {
+                self._onlineGame = value.boolValue
             }
         }
     }

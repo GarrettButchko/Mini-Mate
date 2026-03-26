@@ -71,7 +71,7 @@ struct HostView: View {
                     
                     Spacer()
                     
-                    Text(logic.getHeaderTitle(isOnline: gameModel.kotlin.onlineGame))
+                    Text(logic.getHeaderTitle(isOnline: gameModel.onlineGame))
                         .font(.title)
                         .fontWeight(.bold)
                         .padding(.horizontal)
@@ -154,7 +154,7 @@ struct HostView: View {
         let course = gameModel.kotlin.course
         return Group {
             Section {
-                if gameModel.kotlin.onlineGame {
+                if gameModel.onlineGame {
                     VStack{
                         HStack {
                             Text("Game Code:")
@@ -254,7 +254,7 @@ struct HostView: View {
                             }
                             .padding(.horizontal)
                         }
-                        if gameModel.kotlin.onlineGame {
+                        if gameModel.onlineGame {
                             VStack {
                                 ProgressView()
                                     .scaleEffect(1.5)

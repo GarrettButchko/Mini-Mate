@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import co.touchlab.kermit.Logger
@@ -64,6 +65,7 @@ class StatsViewModel(
 
     private val _allGames = MutableStateFlow<List<Game>>(emptyList())
     val allGames: StateFlow<List<Game>> = _allGames.asStateFlow()
+
 
     // MARK: - Actions
 
@@ -146,12 +148,11 @@ class StatsViewModel(
     fun deleteGame(gameID: String) {
         val user = authModel.userModel.value ?: return
 
-        // 1. Optimistic UI update: Remove from local StateFlows immediately
-        val updatedGames = _allGames.value.filter { it.id != gameID }
-        _allGames.value = updatedGames
+        // 1. Optimistic UI update: Remove from local StateFlow immediately
+        _allGames.update { list -> list.filter { it.id != gameID } }
         
         // Re-calculate the analyzer stats based on the remaining games
-        _analyzer.value = UserStatsAnalyzer(userModel = user, games = updatedGames)
+        _analyzer.value = UserStatsAnalyzer(userModel = user, games = _allGames.value)
 
         coroutineScope.launch {
             try {
@@ -173,8 +174,7 @@ class StatsViewModel(
                 log.d { "🗑️ Game $gameID removed from user and deleted from repositories" }
             } catch (e: Exception) {
                 log.e(e) { "❌ Failed to complete game deletion for $gameID" }
-                // In a production app, we might want to refresh the state from DB here
-                // to rollback the optimistic UI update if the sync failed.
+                // Optional: Rollback UI update by refetching on error
             }
         }
     }

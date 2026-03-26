@@ -68,13 +68,16 @@ class GameViewModel(
         players = emptyList<Player>(),
     ),
     initialCourse: Course? = null,
-    var onlineGame: Boolean = true
+    initialOnlineGame: Boolean = true
 ) {
     private val _game = MutableStateFlow(initialGame)
     val game: StateFlow<Game> = _game.asStateFlow()
 
     private val _course = MutableStateFlow(initialCourse)
     var course: StateFlow<Course?> = _course.asStateFlow()
+
+    private val _onlineGame = MutableStateFlow(initialOnlineGame)
+    val onlineGame: StateFlow<Boolean> = _onlineGame.asStateFlow()
 
     private var lastUpdated: Timestamp = Timestamp.now()
     var hasLoaded: Boolean = false
@@ -88,6 +91,10 @@ class GameViewModel(
 
     fun setCourse(newCourse: Course?) {
         _course.value = newCourse
+    }
+
+    fun setOnlineGame(value: Boolean) {
+        _onlineGame.value = value
     }
 
     fun setIsDismissing(value: Boolean) {
@@ -117,7 +124,7 @@ class GameViewModel(
         lastUpdated = mergedGame.lastUpdated
         _game.value = mergedGame
         
-        if (listen && onlineGame && !isDismissing) {
+        if (listen && _onlineGame.value && !isDismissing) {
             listenForUpdates()
         }
     }
@@ -152,6 +159,7 @@ class GameViewModel(
     }
 
     fun pushUpdate() {
+        if (isDismissing) return
         val currentId = _game.value.id
         if (currentId.isEmpty() || currentId.any { it in ".#$[]" }) return
 
@@ -165,13 +173,13 @@ class GameViewModel(
             players = updatedPlayers
         )
 
-        if (!onlineGame) return
+        if (!_onlineGame.value) return
         liveGameRepo.addOrUpdateGame(_game.value) { _ -> }
     }
 
     fun listenForUpdates() {
         val currentId = _game.value.id
-        if (!onlineGame || currentId.isEmpty() || currentId.any { it in ".#$[]" }) return
+        if (!_onlineGame.value || currentId.isEmpty() || currentId.any { it in ".#$[]" }) return
 
         val ref = Firebase.database.reference("live_games").child(currentId)
 
@@ -197,7 +205,8 @@ class GameViewModel(
                             "id" -> currentGame.copy(id = newValue as? String ?: currentGame.id)
                             "hostUserId" -> currentGame.copy(hostUserId = newValue as? String ?: currentGame.hostUserId)
                             "date" -> {
-                                val ts = try { event.snapshot.value<Timestamp>() } catch (e: Exception) { null }
+                                val tsMillis = (newValue as? Number)?.toLong()
+                                val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(date = ts) else currentGame
                             }
                             "completed" -> currentGame.copy(completed = newValue as? Boolean ?: currentGame.completed)
@@ -209,17 +218,20 @@ class GameViewModel(
                             "dismissed" -> currentGame.copy(dismissed = newValue as? Boolean ?: currentGame.dismissed)
                             "live" -> currentGame.copy(live = newValue as? Boolean ?: currentGame.live)
                             "lastUpdated" -> {
-                                val ts = try { event.snapshot.value<Timestamp>() } catch (e: Exception) { null }
+                                val tsMillis = (newValue as? Number)?.toLong()
+                                val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(lastUpdated = ts) else currentGame
                             }
                             "courseID" -> currentGame.copy(courseID = newValue as? String)
                             "locationName" -> currentGame.copy(locationName = newValue as? String)
                             "startTime" -> {
-                                val ts = try { event.snapshot.value<Timestamp>() } catch (e: Exception) { null }
+                                val tsMillis = (newValue as? Number)?.toLong()
+                                val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(startTime = ts) else currentGame
                             }
                             "endTime" -> {
-                                val ts = try { event.snapshot.value<Timestamp>() } catch (e: Exception) { null }
+                                val tsMillis = (newValue as? Number)?.toLong()
+                                val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(endTime = ts) else currentGame
                             }
                             else -> currentGame
@@ -343,7 +355,7 @@ class GameViewModel(
     }
 
     fun joinGame(id: String, userId: String, completion: (Boolean, String?) -> Unit) {
-        if (!onlineGame) return
+        if (!_onlineGame.value) return
         resetGame()
         resetCourse()
         
@@ -365,7 +377,7 @@ class GameViewModel(
     }
 
     fun leaveGame(userId: String) {
-        if (!onlineGame) return
+        if (!_onlineGame.value) return
         
         _game.value = _game.value.copy(
             players = _game.value.players.filter { it.userId != userId }
@@ -380,7 +392,7 @@ class GameViewModel(
     }
 
     fun createGame(online: Boolean = false, guestData: GuestData? = null) {
-        onlineGame = online
+        setOnlineGame(online)
         if (_game.value.live) return
         
         resetGame()
@@ -408,7 +420,7 @@ class GameViewModel(
         }
         
         pushUpdate()
-        if (online && guestData == null) {
+        if (onlineGame.value && guestData == null) {
             listenForUpdates()
         }
     }
@@ -425,37 +437,51 @@ class GameViewModel(
             started = true,
             players = updatedPlayers
         )
-        pushUpdate()
-        onHostHidden(false)
-    }
 
-    fun dismissGame() {
-        if (_game.value.dismissed) return
-        
-        isDismissing = true
-        stopListening()
-        
-        _game.value = _game.value.copy(dismissed = true)
-        pushUpdate()
-        
-        val gameIdToDelete = _game.value.id
-        hasLoaded = false
-        resetGame()
-        
-        if (gameIdToDelete.isNotEmpty() && onlineGame) {
-            liveGameRepo.deleteGame(gameIdToDelete) { result ->
+        if (onlineGame.value && (game.value.players.count({ it.userId.count() >= 7 }) < 2)) {
+            setOnlineGame(false)
+            stopListening()
+            liveGameRepo.deleteGame(_game.value.id) { result ->
                 if (result) {
                     println("Deleted Game id: \$gameIdToDelete From Firebase")
                 }
             }
         }
-        isDismissing = false
+
+        pushUpdate()
+        onHostHidden(false)
+    }
+
+    fun dismissGame() {
+        if (_game.value.dismissed || isDismissing) return
+        
+        isDismissing = true
+        stopListening()
+        
+        // No pushUpdate here to avoid race conditions with deleteGame
+        _game.value = _game.value.copy(dismissed = true)
+        
+        val gameIdToDelete = _game.value.id
+        hasLoaded = false
+        resetGame()
+        
+        if (gameIdToDelete.isNotEmpty() && _onlineGame.value) {
+            liveGameRepo.deleteGame(gameIdToDelete) { result ->
+                if (result) {
+                    println("Deleted Game id: $gameIdToDelete From Firebase")
+                }
+                isDismissing = false
+            }
+        } else {
+            isDismissing = false
+        }
     }
 
     fun finishAndPersistGame(game: Game, isGuest: Boolean = false) {
         stopListening()
         
         val finished = game.copy(
+            completed = true,
             endTime = Timestamp.now(),
             live = false
         )
@@ -465,10 +491,13 @@ class GameViewModel(
             var analyticsSuccess = true
             
             if (!isGuest) {
-                unifiedGameRepository.save(finished) { local, remote ->
-                    println("✅ Saved Game: local=$local, remote=$remote")
+                val (localOK, remoteOK) = suspendCancellableCoroutine<Pair<Boolean, Boolean>> { continuation ->
+                    unifiedGameRepository.save(finished) { l, r ->
+                        continuation.resume(Pair(l, r))
+                    }
                 }
-                saveSuccess = true
+                println("✅ Saved Game: local=$localOK, remote=$remoteOK")
+                saveSuccess = localOK || remoteOK
             } else {
                 val success = localGameRepository.save(finished)
                 println(if (success) "✅ Saved Guest Game" else "❌ Failed to save guest game")
@@ -494,7 +523,9 @@ class GameViewModel(
             
             if (userModel != null && uid != null) {
                 val updatedUserModel = userModel.copy(gameIDs = userModel.gameIDs + finished.id)
-                val userSaveSuccess = remoteUserRepo.save(updatedUserModel, false).isSuccess
+                val (localUserOK, remoteUserOK) = authModel.userRepository.saveUnified(updatedUserModel.googleId, updatedUserModel)
+                authModel.setUserModel(updatedUserModel)
+                val userSaveSuccess = localUserOK || remoteUserOK
                 println(if (userSaveSuccess) "✅ Updated user model with new game ID" else "❌ Failed to update user model")
                 if (!analyticsSuccess) {
                     println("⚠️ Analytics encountered issues, but game was saved")
@@ -503,6 +534,17 @@ class GameViewModel(
                 println("❌ Unable to save user model - missing userModel or currentUserIdentifier")
             }
             
+            if (finished.id.isNotEmpty() && _onlineGame.value) {
+                val result = suspendCancellableCoroutine<Boolean> { continuation ->
+                    liveGameRepo.deleteGame(finished.id) {
+                        continuation.resume(it)
+                    }
+                }
+                if (result) {
+                    println("Deleted Game id: ${finished.id} From Firebase Live DB")
+                }
+            }
+
             resetGameState()
         }
     }

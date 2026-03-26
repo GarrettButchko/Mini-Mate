@@ -67,7 +67,6 @@ struct MainView: View {
             .ignoresSafeArea(.keyboard)
         }
         .onAppear {
-            
             updateFilteredGames()
             if NetworkChecker.companion.shared.isConnected {
                 Task {
