@@ -288,21 +288,17 @@ struct StartButtons: View {
                     }
                 }
             }
+            
             SignInWithAppleButton { request in
                 authModel.kotlinVM.handleSignInWithAppleRequest(request: request)
             } onCompletion: { result in
-                authModel.kotlinVM.handleSignInResult(result: result) { message, type in
-                    errorMessage = (message: message, type: type.boolValue)
-                } onClearGuestGame: { game in
-                    guestGame = game
-                }
+                authModel.signInWithApple(result: result, errorMessage: $errorMessage, guestGame: $guestGame)
             }
             .signInWithAppleButtonStyle(colorScheme == .light ? .black : .white)
             .frame(height: 50)
             .cornerRadius(25)
+            
         }
         .padding()
     }
 }
-
-

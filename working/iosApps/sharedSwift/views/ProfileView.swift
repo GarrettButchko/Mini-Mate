@@ -51,7 +51,7 @@ struct ProfileView: View {
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
-                        .padding(.leading, 30)
+                        .padding(.leading, 16)
                     Spacer()
                     Text("Tap to change photo")
                         .font(.caption)
@@ -172,7 +172,7 @@ struct ProfileView: View {
                                     message: Text("This will permanently delete your account."),
                                     primaryButton: .destructive(Text("Delete")) {
                                         // call Google deletion flow
-                                        viewModel.googleReauthAndDelete(isSheetPresented: $isSheetPresent)
+                                        viewModel.googleReauthAndDelete(authModel: authModel, isSheetPresented: $isSheetPresent)
                                     },
                                     secondaryButton: .cancel()
                                 )

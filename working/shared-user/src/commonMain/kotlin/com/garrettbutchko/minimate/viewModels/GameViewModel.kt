@@ -186,53 +186,63 @@ class GameViewModel(
         listenerJob?.cancel()
         listenerJob = coroutineScope.launch {
 
-            // 1. Listen for Metadata Changes (Everything except the "players" list)
-            // Using childEvents on the root game reference
+            // 1. Listen for Metadata Changes
             launch {
                 ref.childEvents().collect { event ->
-                    // Match Swift's observe(.childChanged) to avoid redundant initial sync loops
-                    if (event.type != ChildEvent.Type.CHANGED) return@collect
+                    // Catch initial ADDED and subsequent CHANGED events
+                    if (event.type != ChildEvent.Type.CHANGED && event.type != ChildEvent.Type.ADDED) return@collect
 
                     val key = event.snapshot.key ?: return@collect
-                    if (key == "players") return@collect // Skip players here, handled below
+                    if (key == "players") return@collect
 
-                    val newValue = event.snapshot.value
-
-                    // Use .update {} for atomic thread-safe mutations!
+                    val rawValue = event.snapshot.value
+                    
                     _game.update { currentGame ->
-                        // Surgically update the local state based on which key changed
                         when (key) {
-                            "id" -> currentGame.copy(id = newValue as? String ?: currentGame.id)
-                            "hostUserId" -> currentGame.copy(hostUserId = newValue as? String ?: currentGame.hostUserId)
+                            "id" -> currentGame.copy(id = rawValue as? String ?: currentGame.id)
+                            "hostUserId" -> currentGame.copy(hostUserId = rawValue as? String ?: currentGame.hostUserId)
                             "date" -> {
-                                val tsMillis = (newValue as? Number)?.toLong()
+                                val tsMillis = (rawValue as? Number)?.toLong()
                                 val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(date = ts) else currentGame
                             }
-                            "completed" -> currentGame.copy(completed = newValue as? Boolean ?: currentGame.completed)
                             "numberOfHoles" -> {
-                                val num = (newValue as? Number)?.toInt()
+                                val num = (rawValue as? Number)?.toInt()
                                 currentGame.copy(numberOfHoles = num ?: currentGame.numberOfHoles)
                             }
-                            "started" -> currentGame.copy(started = newValue as? Boolean ?: currentGame.started)
-                            "dismissed" -> currentGame.copy(dismissed = newValue as? Boolean ?: currentGame.dismissed)
-                            "live" -> currentGame.copy(live = newValue as? Boolean ?: currentGame.live)
+
+                            "live" -> currentGame.copy(live = rawValue as? Boolean ?: currentGame.live)
                             "lastUpdated" -> {
-                                val tsMillis = (newValue as? Number)?.toLong()
+                                val tsMillis = (rawValue as? Number)?.toLong()
                                 val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(lastUpdated = ts) else currentGame
                             }
-                            "courseID" -> currentGame.copy(courseID = newValue as? String)
-                            "locationName" -> currentGame.copy(locationName = newValue as? String)
+                            "courseID" -> currentGame.copy(courseID = rawValue as? String)
+                            "locationName" -> currentGame.copy(locationName = rawValue as? String)
                             "startTime" -> {
-                                val tsMillis = (newValue as? Number)?.toLong()
+                                val tsMillis = (rawValue as? Number)?.toLong()
                                 val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(startTime = ts) else currentGame
                             }
                             "endTime" -> {
-                                val tsMillis = (newValue as? Number)?.toLong()
+                                val tsMillis = (rawValue as? Number)?.toLong()
                                 val ts = if (tsMillis != null) Timestamp(tsMillis / 1000, ((tsMillis % 1000) * 1000000).toInt()) else null
                                 if (ts != null) currentGame.copy(endTime = ts) else currentGame
+                            }
+                            "started" -> {
+                                val value = rawValue as? Boolean ?: ((rawValue as? Number)?.toInt() == 1)
+                                println("GameViewModel: Metadata update - started: $value")
+                                currentGame.copy(started = value)
+                            }
+                            "dismissed" -> {
+                                val value = rawValue as? Boolean ?: ((rawValue as? Number)?.toInt() == 1)
+                                println("GameViewModel: Metadata update - dismissed: $value")
+                                currentGame.copy(dismissed = value)
+                            }
+                            "completed" -> {
+                                val value = rawValue as? Boolean ?: ((rawValue as? Number)?.toInt() == 1)
+                                println("GameViewModel: Metadata update - completed: $value")
+                                currentGame.copy(completed = value)
                             }
                             else -> currentGame
                         }
@@ -270,8 +280,6 @@ class GameViewModel(
                             }
                             else -> Unit
                         }
-
-                        // Update the game state with the modified player list
                         currentGame.copy(players = currentList)
                     }
                 }
@@ -415,10 +423,6 @@ class GameViewModel(
             addUser()
         }
         
-        if (_course.value == null) {
-            println("No course set for game")
-        }
-        
         pushUpdate()
         if (onlineGame.value && guestData == null) {
             listenForUpdates()
@@ -456,24 +460,34 @@ class GameViewModel(
         if (_game.value.dismissed || isDismissing) return
         
         isDismissing = true
-        stopListening()
-        
-        // No pushUpdate here to avoid race conditions with deleteGame
-        _game.value = _game.value.copy(dismissed = true)
-        
         val gameIdToDelete = _game.value.id
-        hasLoaded = false
-        resetGame()
         
-        if (gameIdToDelete.isNotEmpty() && _onlineGame.value) {
-            liveGameRepo.deleteGame(gameIdToDelete) { result ->
-                if (result) {
-                    println("Deleted Game id: $gameIdToDelete From Firebase")
+        // Update state and PUSH to Firebase so guests see 'dismissed = true'
+        _game.value = _game.value.copy(dismissed = true)
+        if (_onlineGame.value && gameIdToDelete.isNotEmpty()) {
+            pushUpdate()
+        }
+
+        hasLoaded = false
+        
+        coroutineScope.launch {
+            // Wait for propagation before deleting node
+            if (_onlineGame.value && gameIdToDelete.isNotEmpty()) {
+                delay(1000)
+            }
+            stopListening()
+            resetGame()
+            
+            if (gameIdToDelete.isNotEmpty() && _onlineGame.value) {
+                liveGameRepo.deleteGame(gameIdToDelete) { result ->
+                    if (result) {
+                        println("Deleted Game id: $gameIdToDelete From Firebase")
+                    }
+                    isDismissing = false
                 }
+            } else {
                 isDismissing = false
             }
-        } else {
-            isDismissing = false
         }
     }
 
@@ -486,10 +500,16 @@ class GameViewModel(
             live = false
         )
         
+        // Update local state and PUSH to Firebase so guests see 'completed = true'
+        _game.value = finished
+        if (_onlineGame.value && finished.id.isNotEmpty()) {
+            pushUpdate()
+        }
+
         coroutineScope.launch {
             var saveSuccess = false
             var analyticsSuccess = true
-            
+
             if (!isGuest) {
                 val (localOK, remoteOK) = suspendCancellableCoroutine<Pair<Boolean, Boolean>> { continuation ->
                     unifiedGameRepository.save(finished) { l, r ->
@@ -503,13 +523,13 @@ class GameViewModel(
                 println(if (success) "✅ Saved Guest Game" else "❌ Failed to save guest game")
                 saveSuccess = success
             }
-            
+
             if (!saveSuccess) {
                 println("⚠️ Skipping user save - game save failed")
                 resetGameState()
                 return@launch
             }
-            
+
             val currentUserId = authModel.userModel.value?.googleId
             if (currentUserId != null && (currentUserId == finished.hostUserId || isGuest)) {
                 println("running analytics")
@@ -517,10 +537,10 @@ class GameViewModel(
                 println(if (success) "✅ Analytics processed" else "❌ Analytics failed")
                 analyticsSuccess = success
             }
-            
+
             val userModel = authModel.userModel.value
             val uid = authModel.currentUserIdentifier
-            
+
             if (userModel != null && uid != null) {
                 val updatedUserModel = userModel.copy(gameIDs = userModel.gameIDs + finished.id)
                 val (localUserOK, remoteUserOK) = authModel.userRepository.saveUnified(updatedUserModel.googleId, updatedUserModel)
@@ -561,7 +581,7 @@ class GameViewModel(
             println("No Course Id No Analytics")
             return false
         }
-        
+
         val emails = finishedGame.players.mapNotNull { it.email }
         val result = analyticsRepo.updateDayAnalytics(
             emails = emails,

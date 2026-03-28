@@ -12,7 +12,7 @@ struct JoinView: View {
     @EnvironmentObject var viewManager: ViewManagerSwift
     @EnvironmentObject var gameModel: GameViewModelSwift
     
-    @Binding var showHost: Bool
+    @Binding var showJoin: Bool
     @State private var showScanner = false
     @State private var viewContentHeight: CGFloat = 0
     @State private var contentMargins: CGFloat = 70
@@ -22,6 +22,7 @@ struct JoinView: View {
     
     var body: some View {
         ZStack{
+            
             mainContent
                 .contentMargins(.top, contentMargins)
                 .contentMargins(.bottom, contentMargins)
@@ -29,16 +30,20 @@ struct JoinView: View {
             headerOverlay
             bottomButtons
         }
-        .onChange(of: showHost) { oldValue, newValue in
-            viewModel.kotlin.hostDidDismiss(showHost: showHost)
+        .onChange(of: showJoin) { oldValue, newValue in
+            viewModel.kotlin.joinDidDismiss(showJoin: showJoin)
         }
-        .onChange(of: gameModel.game.started) { _, newValue in
-            viewModel.kotlin.gameDidStart(started: newValue) {
-                viewManager.kotlinVM.navigateToScoreCard(isGuest: false)
+        .onChange(of: gameModel.game) { oldGame, newGame in
+            // Trigger logic based on the specific property of the new game object
+            if newGame.started != oldGame.started {
+                viewModel.kotlin.gameDidStart(started: newGame.started) {
+                    viewManager.kotlinVM.navigateToScoreCard(isGuest: false)
+                }
             }
-        }
-        .onChange(of: gameModel.game.dismissed) { _, newValue in
-            viewModel.kotlin.gameDidDismiss(dismissed: newValue)
+                
+            if newGame.dismissed != oldGame.dismissed {
+                viewModel.kotlin.gameDidDismiss(dismissed: newGame.dismissed)
+            }
         }
         .background { backgroundLayer }
     }
@@ -172,48 +177,50 @@ struct JoinView: View {
     @ViewBuilder
     private var joinGameCard: some View {
         ScrollView{
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 8) {
-                    Text("Enter Game Code")
-                        .font(.system(.title2, design: .rounded))
-                        .fontWeight(.bold)
+            VStack{
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Text("Enter Game Code")
+                            .font(.system(.title2, design: .rounded))
+                            .fontWeight(.bold)
+                        
+                        Text("Ask the host for the 6-digit code")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                     
-                    Text("Ask the host for the 6-digit code")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    // Input & Scanner
+                    VStack(spacing: 20) {
+                        gameCodeTextField
+                        actionDivider
+                        scanButton
+                    }
+                }
+                .padding(.vertical, 32)
+                .padding(.horizontal, 20)
+                .background {
+                    RoundedRectangle(cornerRadius: 25, style: .continuous)
+                        .fill(.sub)
+                        .cardShadow()
                 }
                 
-                // Input & Scanner
-                VStack(spacing: 20) {
-                    gameCodeTextField
-                    actionDivider
-                    scanButton
+                if !viewModel.message.isEmpty {
+                    Text(viewModel.message)
+                        .font(.footnote)
+                        .foregroundStyle(.red.opacity(0.8))
+                        .transition(.blurReplace)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.red.opacity(0.2))
+                        )
                 }
             }
-            .padding(.vertical, 32)
-            .padding(.horizontal, 20)
-            .background {
-                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                    .fill(.sub)
-                    .cardShadow()
-            }
-            
-            if !viewModel.message.isEmpty {
-                Text(viewModel.message)
-                    .font(.footnote)
-                    .foregroundStyle(.red.opacity(0.8))
-                    .transition(.blurReplace)
-                    .multilineTextAlignment(.center)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.red.opacity(0.2))
-                    )
-            }
+            .frame(minHeight: viewContentHeight, alignment: .center)
         }
-        .frame(minHeight: viewContentHeight, alignment: .center)
     }
     
     // MARK: - Sub-Components

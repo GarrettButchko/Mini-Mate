@@ -1,5 +1,6 @@
 package com.garrettbutchko.minimate.di
 
+import com.garrettbutchko.minimate.managers.GameManager
 import com.garrettbutchko.minimate.repositories.UnifiedGameRepository
 import com.garrettbutchko.minimate.viewModels.CourseLocationViewModel
 import com.garrettbutchko.minimate.viewModels.CourseSearchViewModel
@@ -21,4 +22,5 @@ object KoinHelper : KoinComponent {
     fun getJoinViewModel(): JoinViewModel = get()
     fun getStatsViewModel(): StatsViewModel = get()
     fun getUnifiedGameRepo(): UnifiedGameRepository = get()
+    fun getGameManager(): GameManager = get()
 }

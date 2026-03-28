@@ -8,6 +8,7 @@ import com.garrettbutchko.minimate.repositories.gameRepos.LocalGameRepository
 import com.garrettbutchko.minimate.repositories.userRepos.RemoteUserRepository
 import com.garrettbutchko.minimate.repositories.userRepos.UserRepository
 import dev.gitlive.firebase.auth.AuthCredential
+import dev.gitlive.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -148,6 +149,16 @@ class ProfileViewModel(
                     setIsRed(true)
                 }
             )
+        }
+    }
+
+    fun googleReauthAndDelete(idToken: String, accessToken: String?, isSheetPresented: (Boolean) -> Unit) {
+        try {
+            val credential = GoogleAuthProvider.credential(idToken, accessToken)
+            handleDeleteAccount(credential, isSheetPresented)
+        } catch (e: Exception) {
+            setBotMessage(e.message ?: "Unknown error")
+            setIsRed(true)
         }
     }
 

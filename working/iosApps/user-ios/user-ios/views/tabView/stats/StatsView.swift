@@ -17,35 +17,25 @@ struct StatsView: View {
     @StateObject private var statModel = StatsViewModelSwift()
     @EnvironmentObject var viewManager: ViewManagerSwift
     @EnvironmentObject var authModel: AuthViewModelSwift
+    @EnvironmentObject var gameManager: GameManagerSwift
     
-    var usersGames: [Game] {
-        statModel.allGames.filter { authModel.userModel?.gameIDs.contains($0.id) == true }
-    }
+    var usersGames: [Game] { statModel.allGames }
     
     var games: [Game] {
         let filteredGames: [Game]
-        let searchLowercased = statModel.searchText.lowercased()
-        if statModel.searchText.isEmpty {
-            filteredGames = usersGames
-        } else {
-            filteredGames = usersGames.filter {
-                $0.date.formatted().lowercased().contains(searchLowercased)
-                || ($0.locationName != nil && $0.locationName!.contains(searchLowercased))
-                || ($0.players.contains(where: { $0.name.lowercased().contains(searchLowercased) }))
-            }}
-        let sortedGames: [Game]
         if statModel.latest {
-            sortedGames = filteredGames.sorted { $0.date > $1.date }
+            filteredGames = usersGames.sorted { $0.date > $1.date }
         } else {
-            sortedGames = filteredGames.sorted { $0.date < $1.date }
+            filteredGames = usersGames.sorted { $0.date < $1.date }
         }
-        
-        return sortedGames
+        return filteredGames
     }
     
     @State private var isDismissed = false
     @State var isRotating: Bool = false
     @State var gameReview: Game? = nil
+    
+    @State private var titleHeight: CGFloat = 0
     
     var body: some View {
         if (authModel.userModel != nil) {
@@ -62,10 +52,46 @@ struct StatsView: View {
                                 .transition(.opacity.combined(with: .scale))
                         }
                     }
+                    .background {
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear {
+                                    titleHeight = proxy.size.height
+                                }
+                                .onChange(of: proxy.size.height) { _, newValue in
+                                    titleHeight = newValue
+                                }
+                        }
+                    }
                     .animation(.easeInOut(duration: 0.35), value: statModel.pickedSection)
                     
                     Spacer()
+                    
+                    if statModel.pickedSection == "Games" {
+                        Button {
+                            statModel.kotlin.toggleSortWithCooldown()
+                        } label: {
+                            ZStack{
+                                Circle()
+                                    .ifAvailableGlassEffect()
+                                    .frame(width: titleHeight, height: titleHeight)
+                                
+                                if statModel.latest{
+                                    Image(systemName: "arrow.up")
+                                        .transition(.scale)
+                                        .frame(width: 50, height: 50)
+                                } else {
+                                    Image(systemName: "arrow.down")
+                                        .transition(.scale)
+                                        .frame(width: 50, height: 50)
+                                }
+                            }
+                        }
+                        .transition(.opacity.combined(with: .scale))
+                    }
                 }
+                .frame(height: 50)
+                .animation(.easeInOut(duration: 0.35), value: statModel.pickedSection)
                 
                 Picker("Section", selection: $statModel.pickedSection) {
                     ForEach(statModel.pickerSections, id: \.self) {
@@ -82,9 +108,10 @@ struct StatsView: View {
                                 insertion: .move(edge: .leading).combined(with: .opacity),
                                 removal: .move(edge: .leading).combined(with: .opacity)
                             ))
+                            .contentMargins(.vertical, 12)
                     } else {
                         
-                        if statModel.analyzer?.hasGames() == true {
+                        if gameManager.kotlin.hasGames() == true {
                             overViewSection
                                 .transition(.asymmetric(
                                     insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -127,17 +154,13 @@ struct StatsView: View {
                 ActivityView(activityItems: [statModel.shareContent])
             }
             .onAppear{
-                Task{
-                    let _ = try await statModel.kotlin.onAppear()
-                }
+                statModel.kotlin.onAppear()
             }
         }
     }
     
-    
-    
     private var gamesSection: some View {
-        ZStack{
+        
             ScrollView {
                 VStack(spacing: 16){
                     if NetworkChecker.companion.shared.isConnected && !authModel.userModel!.isPro {
@@ -219,49 +242,7 @@ struct StatsView: View {
                     }
                 }
             }
-            .contentMargins(.top, 70)
-            
-            
-            VStack{
-                HStack{
-                    SearchBarView(searchText: $statModel.searchText)
-                    
-                    Button {
-                        statModel.kotlin.toggleSortWithCooldown()
-                    } label: {
-                        ZStack{
-                            Circle()
-                                .ifAvailableGlassEffect()
-                                .frame(width: 50, height: 50)
-                            
-                            if statModel.latest{
-                                Image(systemName: "arrow.up")
-                                    .transition(.scale)
-                                    .frame(width: 60, height: 60)
-                            } else {
-                                Image(systemName: "arrow.down")
-                                    .transition(.scale)
-                                    .frame(width: 60, height: 60)
-                            }
-                        }
-                    }
-                }
-                .cardShadow()
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.bg.opacity(1),
-                            Color.clear
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea(edges: .top)
-                )
-                
-                Spacer()
-            }
-        }
+        
         .environmentObject(statModel)
     }
     
@@ -269,64 +250,58 @@ struct StatsView: View {
         let spacing : CGFloat = 10
         
         return ScrollView {
-            
-            if let analyzer = statModel.analyzer {
-                VStack(spacing: 16){
-                    SectionStatsView(title: "Basic Stats", spacing: spacing) {
-                        HStack(spacing: spacing){
-                            StatCard(title: "Players Faced", value: "\(analyzer.totalPlayersFaced())", infoText: "Number of players other than yourself you played with.")
-                            StatCard(title: "Holes Played", value: "\(analyzer.totalHolesPlayed())", infoText: "Total holes played (including unfinished holes).")
-                        }
-                        
-                        StatCard(title: "Games Played", value: "\(analyzer.totalGamesPlayed())", infoText: "Total games played.")
-                        
-                        HStack(spacing: spacing){
-                            StatCard(title: "Strokes/Game", value: String(format: "%.1f", analyzer.averageStrokesPerGame()), infoText: "Average strokes per game.")
-                            StatCard(title: "Strokes/Hole", value: String(format: "%.1f", analyzer.averageStrokesPerHole()), infoText: "Average strokes per hole.")
-                        }
+            VStack(spacing: 16){
+                SectionStatsView(title: "Basic Stats", spacing: spacing) {
+                    HStack(spacing: spacing){
+                        StatCard(title: "Players Faced", value: "\(gameManager.kotlin.totalPlayersFaced())", infoText: "Number of players other than yourself you played with.")
+                        StatCard(title: "Holes Played", value: "\(gameManager.kotlin.totalHolesPlayed())", infoText: "Total holes played (including unfinished holes).")
                     }
                     
+                    StatCard(title: "Games Played", value: "\(gameManager.kotlin.totalGamesPlayed())", infoText: "Total games played.")
                     
-                    if NetworkChecker.companion.shared.isConnected && !authModel.userModel!.isPro {
-                        VStack{
-                            BannerAdView(adUnitID: "ca-app-pub-8261962597301587/6344452429") // Replace with real one later
-                                .frame(height: 50)
-                                .padding()
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 25)
-                                .fill(.sub)
-                                .cardShadow()
-                        )
-                    }
-                    
-                    SectionStatsView(title: "Average 18-Hole Game", spacing: spacing){
-                        BarChartView(data: analyzer.averageHoles18(), title: "Average Strokes")
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(.subTwo)
-                            )
-                    }
-                    
-                    SectionStatsView(title: "Misc Stats", spacing: spacing) {
-                        HStack(spacing: spacing){
-                            StatCard(title: "Best Game", value: "\(analyzer.bestGameStrokes() ?? 0)", color: .green, infoText: "Lowest total strokes in a game.")
-                            StatCard(title: "Worst Game", value: "\(analyzer.worstGameStrokes() ?? 0)", color: .red, infoText: "Highest total strokes in a game.")
-                        }
-                        StatCard(title: "Holes-in-One", value: "\(analyzer.holeInOneCount())", infoText: "Number of holes with one stroke.")
-                    }
-                    
-                    SectionStatsView(title: "Average 9-Hole Game", spacing: spacing){
-                        BarChartView(data: analyzer.averageHoles9(), title: "Average Strokes")
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(.subTwo)
-                            )
+                    HStack(spacing: spacing){
+                        StatCard(title: "Strokes/Game", value: String(format: "%.1f", gameManager.kotlin.averageStrokesPerGame()), infoText: "Average strokes per game.")
+                        StatCard(title: "Strokes/Hole", value: String(format: "%.1f", gameManager.kotlin.averageStrokesPerHole()), infoText: "Average strokes per hole.")
                     }
                 }
-            } else {
-                // Placeholder while analyzer initializes
-                LogoDefault()
+                
+                
+                if NetworkChecker.companion.shared.isConnected && !authModel.userModel!.isPro {
+                    VStack{
+                        BannerAdView(adUnitID: "ca-app-pub-8261962597301587/6344452429") // Replace with real one later
+                            .frame(height: 50)
+                            .padding()
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(.sub)
+                            .cardShadow()
+                    )
+                }
+                
+                SectionStatsView(title: "Average 18-Hole Game", spacing: spacing){
+                    BarChartView(data: gameManager.kotlin.averageHoles18(), title: "Average Strokes")
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.subTwo)
+                        )
+                }
+                
+                SectionStatsView(title: "Misc Stats", spacing: spacing) {
+                    HStack(spacing: spacing){
+                        StatCard(title: "Best Game", value: "\(gameManager.kotlin.bestGameStrokes() ?? 0)", color: .green, infoText: "Lowest total strokes in a game.")
+                        StatCard(title: "Worst Game", value: "\(gameManager.kotlin.worstGameStrokes() ?? 0)", color: .red, infoText: "Highest total strokes in a game.")
+                    }
+                    StatCard(title: "Holes-in-One", value: "\(gameManager.kotlin.holeInOneCount())", infoText: "Number of holes with one stroke.")
+                }
+                
+                SectionStatsView(title: "Average 9-Hole Game", spacing: spacing){
+                    BarChartView(data: gameManager.kotlin.averageHoles9(), title: "Average Strokes")
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.subTwo)
+                        )
+                }
             }
         }
     }

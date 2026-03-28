@@ -6,9 +6,6 @@ import shared_user
 struct MainView: View {
     @EnvironmentObject var locationHandler: LocationHandlerSwift
     
-    @State var allGames: [Game] = []
-    @State private var filteredGames: [Game] = []
-    
     // Platform-agnostic business logic isolated for KMP
     private let logic = MainViewBusinessLogic()
     
@@ -24,6 +21,7 @@ struct MainView: View {
     @EnvironmentObject var viewManager: ViewManagerSwift
     @EnvironmentObject var authModel: AuthViewModelSwift
     @EnvironmentObject var gameModel: GameViewModelSwift
+    @EnvironmentObject var gameManager: GameManagerSwift
     
     @State private var nameIsPresented = false
     @State private var isSheetPresented = false
@@ -40,8 +38,6 @@ struct MainView: View {
     
     private var localGameRepo: LocalGameRepository = KoinHelperParent.shared.getLocalGameRepo()
     
-    @State private var analyzer: UserStatsAnalyzer? = nil
-    @State private var analyzerTask: Task<Void, Never>? = nil
     @State private var showLastGameStats = false
     @State private var buttonsViewHeight: CGFloat = 0
     @State private var isLoading = false
@@ -67,18 +63,30 @@ struct MainView: View {
             .ignoresSafeArea(.keyboard)
         }
         .onAppear {
-            updateFilteredGames()
+            gameManager.kotlin.onAppear()
             if NetworkChecker.companion.shared.isConnected {
                 Task {
                    try? await gameModel.kotlin.setUp()
                 }
             }
+            
+            // Initial check to see if games are already loaded
+            if !gameManager.userGames.isEmpty {
+                showLastGameStats = true
+            }
         }
-        .onChange(of: allGames) { _, _ in
-            updateFilteredGames()
+        .onChange(of: authModel.userModel) { _, _ in
+            gameManager.kotlin.onAppear()
         }
-        .onChange(of: userGameIDs) { _, _ in
-            updateFilteredGames()
+        .onChange(of: gameManager.userGames.count) { _, newValue in
+            // When games are loaded or change, ensure the stats section is visible if applicable
+            if newValue > 0 && !showLastGameStats {
+                withAnimation(.spring()) {
+                    showLastGameStats = true
+                }
+            } else if newValue == 0 {
+                showLastGameStats = false
+            }
         }
         .background{
             Rectangle()
@@ -86,6 +94,7 @@ struct MainView: View {
                 .ignoresSafeArea()
         }
     }
+
     
     @State private var titleHeight: CGFloat = 0
     
@@ -180,8 +189,10 @@ struct MainView: View {
                         
                         proStopper
                             .cardShadow()
+                        
                         ad
                             .cardShadow()
+                        
                         lastGameStats
                         
                     }
@@ -320,7 +331,7 @@ struct MainView: View {
                 }
             }
             .sheet(isPresented: $showJoin) {
-                JoinView(showHost: $showJoin)
+                JoinView(showJoin: $showJoin)
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
@@ -422,33 +433,6 @@ struct MainView: View {
                         ProView(showSheet: $showDonation)
                     }
                     .padding()
-                }
-            }
-        }
-    }
-    
-    private func updateFilteredGames() {
-        Task{
-            allGames = try await localGameRepo.fetchAll(ids: authModel.userModel?.gameIDs ?? []).map({ $0 })
-        }
-        filteredGames = logic.filterUserGames(allGames: allGames, userGameIDs: userGameIDs)
-        refreshAnalyzer(with: filteredGames)
-    }
-    
-    private func refreshAnalyzer(with games: [Game]) {
-        analyzerTask?.cancel()
-        guard let user = authModel.userModel else {
-            analyzer = nil
-            showLastGameStats = false
-            return
-        }
-        analyzerTask = Task {
-            try? await Task.sleep(nanoseconds: 200_000_000)
-            if Task.isCancelled { return }
-            await MainActor.run {
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    self.analyzer = UserStatsAnalyzer(userModel: user, games: games)
-                    self.showLastGameStats = self.analyzer?.latestGame != nil
                 }
             }
         }
@@ -643,7 +627,7 @@ struct MainView: View {
     
     @ViewBuilder
     var lastGameStats: some View {
-        if showLastGameStats, let lastGame = analyzer?.latestGame() {
+        if showLastGameStats, let lastGame = gameManager.kotlin.latestGame() {
             
             Button {
                 gameReview = lastGame
@@ -659,9 +643,9 @@ struct MainView: View {
                         // 2. Only show Winner if it's a multiplayer game
                         if lastGame.players.count > 1 {
                             PhotoIconView(
-                                photoURL: analyzer?.winnerOfLatestGame()?.photoURL,
-                                name: logic.formatWinnerName(name: analyzer?.winnerOfLatestGame()?.name),
-                                ballColor: analyzer?.winnerOfLatestGame()?.ballColor,
+                                photoURL: gameManager.kotlin.winnerOfLatestGame()?.photoURL,
+                                name: logic.formatWinnerName(name: gameManager.kotlin.winnerOfLatestGame()?.name),
+                                ballColor: gameManager.kotlin.winnerOfLatestGame()?.ballColor,
                                 imageSize: 30,
                                 background: .yellow
                             )
@@ -675,7 +659,7 @@ struct MainView: View {
                         
                         StatCard(
                             title: "Your Strokes",
-                            value: "\(analyzer?.usersScoreOfLatestGame() ?? 0)",
+                            value: "\(gameManager.kotlin.usersScoreOfLatestGame())",
                             makeColor: gameModel.course?.scoreCardColor,
                             cornerRadius: 12,
                             cardHeight: cardHeight,
@@ -683,7 +667,7 @@ struct MainView: View {
                         )
                     }
                     
-                    BarChartView(data: analyzer?.usersHolesOfLatestGame() ?? [], title: "Recap of Game")
+                    BarChartView(data: gameManager.kotlin.usersHolesOfLatestGame(), title: "Recap of Game")
                         .frame(height: 150)
                         .background(
                             RoundedRectangle(cornerRadius: 12)

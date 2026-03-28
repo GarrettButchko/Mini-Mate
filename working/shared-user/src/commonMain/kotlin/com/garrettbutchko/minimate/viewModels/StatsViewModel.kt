@@ -1,10 +1,9 @@
 package com.garrettbutchko.minimate.viewModels
 
-import com.garrettbutchko.minimate.analyzers.UserStatsAnalyzer
 import com.garrettbutchko.minimate.dataModels.gameModels.Game
-import com.garrettbutchko.minimate.datamodels.UserModel
 import com.garrettbutchko.minimate.repositories.gameRepos.LocalGameRepository
 import com.garrettbutchko.minimate.repositories.gameRepos.RemoteGameRepository
+import com.garrettbutchko.minimate.managers.GameManager
 import com.garrettbutchko.minimate.utilities.NetworkChecker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,9 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import co.touchlab.kermit.Logger
 import dev.gitlive.firebase.firestore.Timestamp
 
@@ -22,6 +19,7 @@ class StatsViewModel(
     private val localGameRepo: LocalGameRepository,
     private val remoteGameRepo: RemoteGameRepository,
     private val authModel: AuthViewModel,
+    private val gameManager: GameManager,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
     private val log = Logger.withTag("StatsViewModel")
@@ -53,19 +51,8 @@ class StatsViewModel(
     private val _isCooldown = MutableStateFlow(false)
     val isCooldown: StateFlow<Boolean> = _isCooldown.asStateFlow()
 
-    private val _isCooldown2 = MutableStateFlow(false)
-    val isCooldown2: StateFlow<Boolean> = _isCooldown2.asStateFlow()
-
-    // MARK: - Derived / Computed
-    private val _analyzer = MutableStateFlow<UserStatsAnalyzer?>(null)
-    val analyzer: StateFlow<UserStatsAnalyzer?> = _analyzer.asStateFlow()
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-
-    private val _allGames = MutableStateFlow<List<Game>>(emptyList())
-    val allGames: StateFlow<List<Game>> = _allGames.asStateFlow()
-
+    val isRefreshing: StateFlow<Boolean> = gameManager.isRefreshing
+    val allGames: StateFlow<List<Game>> = gameManager.userGames
 
     // MARK: - Actions
 
@@ -93,38 +80,15 @@ class StatsViewModel(
         _isSharePresented.value = value
     }
 
-    suspend fun onAppear(): List<Game> {
+    fun onAppear() {
         val user = authModel.userModel.value
-        val gameIds = user?.gameIDs ?: emptyList()
-        
-        log.d { "📊 onAppear: user=${user?.name}, gameIDsCount=${gameIds.size}" }
 
-        // 1. Initial local fetch
-        val games = localGameRepo.fetchAll(ids = gameIds)
-        _allGames.value = games
-        log.d { "📦 Initial local fetch returned ${games.size} games" }
-
-        // 2. Update analyzer with what we have
-        if (user != null) {
-            _analyzer.value = UserStatsAnalyzer(userModel = user, games = games)
-        }
-        
-        // 3. If there are missing games locally, trigger a background refresh
-        if (user != null && NetworkChecker.shared.isConnected && games.size != user.gameIDs.size) {
+        // Trigger a cloud refresh if needed
+        if (user != null && NetworkChecker.shared.isConnected && allGames.value.size != user.gameIDs.size) {
             coroutineScope.launch {
-                refreshFromCloudIfNeeded(user) {
-                    // Update the list again after refresh
-                    coroutineScope.launch {
-                        val updatedGames = localGameRepo.fetchAll(ids = user.gameIDs)
-                        _allGames.value = updatedGames
-                        _analyzer.value = UserStatsAnalyzer(userModel = user, games = updatedGames)
-                        log.d { "🔄 List updated after cloud refresh: ${updatedGames.size} games" }
-                    }
-                }
+                gameManager.refreshFromCloud(user)
             }
         }
-        
-        return games
     }
 
     fun toggleSortWithCooldown() {
@@ -148,99 +112,26 @@ class StatsViewModel(
     fun deleteGame(gameID: String) {
         val user = authModel.userModel.value ?: return
 
-        // 1. Optimistic UI update: Remove from local StateFlow immediately
-        _allGames.update { list -> list.filter { it.id != gameID } }
-        
-        // Re-calculate the analyzer stats based on the remaining games
-        _analyzer.value = UserStatsAnalyzer(userModel = user, games = _allGames.value)
-
         coroutineScope.launch {
             try {
-                // 2. Sync with repositories
-                // First, update the user model to remove the game ID
+                // 1. Update the user model to remove the game ID
                 val updatedGameIDs = user.gameIDs.filter { it != gameID }
                 val updatedUser = user.copy(gameIDs = updatedGameIDs, lastUpdated = Timestamp.now())
-                
+
                 // Save updated user (both Local and Remote)
                 authModel.userRepository.saveUnified(updatedUser.googleId, updatedUser)
-                
-                // Update the state in AuthViewModel so it propagates to other views
+
+                // Update the state in AuthViewModel so it propagates to GameManager and our analyzer
                 authModel.setUserModel(updatedUser)
 
-                // 3. Delete the game itself from repositories
+                // 2. Delete the game itself from repositories
                 localGameRepo.delete(gameID)
                 remoteGameRepo.delete(gameID)
 
                 log.d { "🗑️ Game $gameID removed from user and deleted from repositories" }
             } catch (e: Exception) {
                 log.e(e) { "❌ Failed to complete game deletion for $gameID" }
-                // Optional: Rollback UI update by refetching on error
             }
-        }
-    }
-
-    fun refreshFromCloudIfNeeded(
-        user: UserModel,
-        completion: () -> Unit
-    ) {
-        if (_isCooldown2.value) {
-            log.d { "⏳ Cloud refresh on cooldown" }
-            completion()
-            return
-        }
-
-        if (!NetworkChecker.shared.isConnected) {
-            log.d { "🌐 No internet, skipping cloud refresh" }
-            coolDown2()
-            completion()
-            return
-        }
-
-        log.d { "☁️ Starting cloud refresh for ${user.gameIDs.size} game IDs" }
-        _isRefreshing.value = true
-        
-        coroutineScope.launch {
-            try {
-                val missingIDs = localGameRepo.getMissingLocalGameIDs(user.gameIDs)
-                log.d { "🔍 Missing local games count: ${missingIDs.size}" }
-                
-                if (missingIDs.isEmpty()) {
-                    log.d { "✅ No missing games locally" }
-                    _isRefreshing.value = false
-                    coolDown2()
-                    completion()
-                    return@launch
-                }
-
-                log.d { "📡 Fetching ${missingIDs.size} games from Firestore..." }
-                val remoteDTOs = remoteGameRepo.fetchAll(missingIDs)
-                log.d { "📥 Firestore returned ${remoteDTOs.size} games" }
-                
-                val remoteGames = remoteDTOs.map { it.toGame() }
-
-                if (remoteGames.isNotEmpty()) {
-                    val success = localGameRepo.save(remoteGames)
-                    if (success) {
-                        log.d { "✅ Saved ${remoteGames.size} games to local DB" }
-                    } else {
-                        log.e { "❌ Failed to save games to local DB" }
-                    }
-                }
-            } catch (e: Exception) {
-                log.e(e) { "❌ Error refreshing from cloud" }
-            } finally {
-                _isRefreshing.value = false
-                coolDown2()
-                completion()
-            }
-        }
-    }
-
-    private fun coolDown2() {
-        _isCooldown2.value = true
-        coroutineScope.launch {
-            delay(1000)
-            _isCooldown2.value = false
         }
     }
 }

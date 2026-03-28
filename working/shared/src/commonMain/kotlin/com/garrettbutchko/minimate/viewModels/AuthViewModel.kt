@@ -182,7 +182,7 @@ open class AuthViewModel(
                 val loadedUser = userRepository.loadOrCreateUser(
                     id = user.uid,
                     firebaseUser = user,
-                    name = name,
+                    name = user.displayName ?: name,
                     signInMethod = signInMethod,
                     appleId = appleId,
                     guestGame = guestGame
@@ -315,7 +315,6 @@ open class AuthViewModel(
                     )
                     createOrSignInUserAndNavigateToHome(
                         user = userData,
-                        name = name,
                         signInMethod = SignInMethod.APPLE,
                         appleId = appleId,
                         guestGame = guestGame,

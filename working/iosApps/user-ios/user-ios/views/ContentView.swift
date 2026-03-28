@@ -11,6 +11,7 @@ struct ContentView: View {
     @StateObject var locationHandler = LocationHandlerSwift()
     @StateObject private var authModel = AuthViewModelSwift()
     @StateObject private var gameModel = GameViewModelSwift()
+    
     @StateObject var hostVM = HostViewModelSwift()
     
     @State private var previousView: ViewType?
@@ -28,6 +29,7 @@ struct ContentView: View {
         .environmentObject(viewManager)
         .environmentObject(hostVM)
         .environmentObject(locationHandler)
+        
         .animation(.easeInOut(duration: 0.4), value: viewManager.currentView)
         .onAppear {
             locationHandler.requestLocationAccess()
@@ -100,6 +102,7 @@ struct MainTabView: View {
     @EnvironmentObject var hostVM: HostViewModelSwift
     @EnvironmentObject var locationHandler: LocationHandlerSwift
     
+    @StateObject private var gameManager = GameManagerSwift()
     @StateObject var iapManager = IAPManager()
     
     var userRepo: UserRepository = KoinHelperParent.shared.getUserRepo()
@@ -119,13 +122,13 @@ struct MainTabView: View {
                 .ignoresSafeArea()
             
             tabContent
-
             loadingOverlay
         }
         .onAppear {
             initializeAppData()
         }
         .environmentObject(iapManager)
+        .environmentObject(gameManager)
     }
     
     @ViewBuilder

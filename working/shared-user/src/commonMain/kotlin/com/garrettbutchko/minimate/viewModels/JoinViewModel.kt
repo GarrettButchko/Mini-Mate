@@ -33,13 +33,25 @@ class JoinViewModel(
 
     fun joinGame() {
         val currentCode = _gameCode.value
-        if (!canAttemptJoin(currentCode)) return
-
-        val user = authModel.userModel.value ?: return
+        println("JoinViewModel: joinGame called with code: $currentCode")
         
+        if (!canAttemptJoin(currentCode)) {
+            println("JoinViewModel: joinGame aborted - invalid code length")
+            return
+        }
+
+        val user = authModel.userModel.value
+        if (user == null) {
+            println("JoinViewModel: joinGame aborted - no userModel found")
+            return
+        }
+        
+        println("JoinViewModel: Attempting to join game $currentCode for user ${user.googleId}")
         gameModel.joinGame(id = currentCode, userId = user.googleId) { success, error ->
+            println("JoinViewModel: joinGame result - success: $success, error: $error")
             if (success) {
                 _inGame.value = true
+                _message.value = ""
             } else {
                 error?.let {
                     _message.value = it
@@ -49,8 +61,13 @@ class JoinViewModel(
     }
 
     fun leaveGame() {
-        val user = authModel.userModel.value ?: return
+        val user = authModel.userModel.value
+        if (user == null) {
+            println("JoinViewModel: leaveGame aborted - no userModel found")
+            return
+        }
 
+        println("JoinViewModel: leaveGame called for user ${user.googleId}")
         gameModel.leaveGame(userId = user.googleId)
         _gameCode.value = ""
         _inGame.value = false
@@ -58,28 +75,48 @@ class JoinViewModel(
 
     // MARK: - External State Reactions
 
-    fun hostDidDismiss(showHost: Boolean) {
+    /**
+     * Called when the Join/Lobby view is dismissed.
+     */
+    fun joinDidDismiss(showJoin: Boolean) {
         val game = gameModel.game.value
-        if (shouldLeaveGameOnHostDismiss(showHost, game.id, game.started)) {
-            gameModel.leaveGame(userId = game.id)
-            _inGame.value = false
+        val shouldLeave = shouldLeaveGameOnHostDismiss(showJoin, game.id, game.started)
+        println("JoinViewModel: hostDidDismiss called - showHost: $showJoin, gameId: ${game.id}, started: ${game.started}, shouldLeave: $shouldLeave")
+        
+        if (shouldLeave) {
+            println("JoinViewModel: shouldLeave is true, calling leaveGame()")
+            leaveGame()
         }
     }
 
+    /**
+     * Called when the game's "started" status changes.
+     */
     fun gameDidStart(started: Boolean, onNavigate: () -> Unit) {
-        if (shouldNavigateOnGameStart(started)) {
+        val shouldNav = shouldNavigateOnGameStart(started)
+        println("JoinViewModel: gameDidStart reaction - started: $started, shouldNavigate: $shouldNav")
+        
+        if (shouldNav) {
+            println("JoinViewModel: Triggering navigation callback")
             onNavigate()
         }
     }
 
+    /**
+     * Called when the game's "dismissed" status changes.
+     */
     fun gameDidDismiss(dismissed: Boolean) {
-        if (shouldResetOnGameDismiss(dismissed)) {
+        val shouldReset = shouldResetOnGameDismiss(dismissed)
+        println("JoinViewModel: gameDidDismiss reaction - dismissed: $dismissed, shouldReset: $shouldReset")
+        
+        if (shouldReset) {
+            println("JoinViewModel: Resetting game state")
             _gameCode.value = ""
             _inGame.value = false
         }
     }
 
-    // MARK: - Internal Business Logic (Combined from JoinViewBusinessLogic)
+    // MARK: - Internal Business Logic
 
     private fun canAttemptJoin(gameCode: String): Boolean {
         return gameCode.isNotBlank() && gameCode.length >= 6

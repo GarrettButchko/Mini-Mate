@@ -27,14 +27,6 @@ class MainViewBusinessLogic {
     
     // MARK: - Data Filtering
     
-    /**
-     * Filters all available games to only those matching the user's game IDs.
-     */
-    fun filterUserGames(allGames: List<Game>, userGameIDs: List<String>): List<Game> {
-        val ids = userGameIDs.toSet()
-        return allGames.filter { ids.contains(it.id) }
-    }
-    
     // MARK: - Presentation Formatting
     
     /**

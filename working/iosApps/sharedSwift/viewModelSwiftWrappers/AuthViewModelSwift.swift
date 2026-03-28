@@ -33,7 +33,11 @@ class AuthViewModelSwift: ObservableObject {
     // 2. Public Computed Properties with Getters and Setters
     var userModel: UserModel? {
         get { _userModel }
-        set { kotlinVM.setUserModel(userModel: newValue) }
+        set { 
+            // Update local state immediately to avoid race conditions with Flow emission
+            self._userModel = newValue
+            kotlinVM.setUserModel(userModel: newValue) 
+        }
     }
 
     var firebaseUser: Firebase_authFirebaseUser? {
@@ -43,7 +47,10 @@ class AuthViewModelSwift: ObservableObject {
 
     var isLoading: Bool {
         get { _isLoading }
-        set { kotlinVM.setLoading(state: newValue) }
+        set { 
+            self._isLoading = newValue
+            kotlinVM.setLoading(state: newValue) 
+        }
     }
 
     init() {
@@ -60,7 +67,10 @@ class AuthViewModelSwift: ObservableObject {
         
         Task {
             for await model in kotlinVM.userModel {
-                self._userModel = model
+                // Only update if it's actually different to avoid overriding immediate local changes
+                if self._userModel != model {
+                    self._userModel = model
+                }
             }
         }
         
@@ -186,7 +196,7 @@ class AuthViewModelSwift: ObservableObject {
     }
 
     /// Reauthenticate a Google user and hand back the KMP `AuthCredential`
-    func reauthenticateWithGoogle(completion: @escaping (Result<AuthCredential, Error>) -> Void) {
+    func reauthenticateWithGoogle(completion: @escaping (Result<(idToken: String, accessToken: String?), Error>) -> Void) {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
             completion(.failure(NSError(
                 domain: "AuthViewModel",
@@ -230,13 +240,30 @@ class AuthViewModelSwift: ObservableObject {
                 }
                 
                 let accessToken = user.accessToken.tokenString
-                
-                // Call our new shared Kotlin method to convert to a GitLive KMP AuthCredential
-                self.kotlinVM.getGoogleCredential(idToken: idToken, accessToken: accessToken) { result in
-                    completion(result as! Result<AuthCredential, any Error>)
-                }
+                completion(.success((idToken: idToken, accessToken: accessToken)))
             }
         }
     }
+    
+    func signInWithApple(
+        result: Result<ASAuthorization, Error>,
+        errorMessage: Binding<(message: String?, type: Bool)>,
+        guestGame: Binding<Game?>
+    ) {
+        switch result {
+        case .success(let authorization):
+            kotlinVM.signInWithApple(
+                authorization: authorization,
+                guestGame: guestGame.wrappedValue,
+                onErrorMessage: { message, type in
+                    errorMessage.wrappedValue = (message, type.boolValue)
+                },
+                onClearGuestGame: { game in
+                    guestGame.wrappedValue = game
+                }
+            )
+        case .failure(let error):
+            errorMessage.wrappedValue = (error.localizedDescription, true)
+        }
+    }
 }
-

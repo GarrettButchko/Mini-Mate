@@ -5,7 +5,7 @@ package com.garrettbutchko.minimate.viewModelsiOSAddOns
 import co.touchlab.kermit.Logger
 import com.garrettbutchko.minimate.datamodels.UserModel
 import com.garrettbutchko.minimate.utilities.randomNonceString
-import com.garrettbutchko.minimate.utilities.shortHash
+import com.garrettbutchko.minimate.utilities.sha256
 import dev.gitlive.firebase.auth.OAuthProvider
 import dev.gitlive.firebase.storage.Data
 import kotlinx.coroutines.launch
@@ -32,8 +32,8 @@ fun ProfileViewModel.startAppleReauthAndDelete(onSheetPresentChange: (Boolean) -
 
     val nonce = randomNonceString()
     currentNonce = nonce
-    // Apple requires SHA256 of the nonce. We use shortHash as a fallback if full SHA256 isn't available.
-    request.nonce = shortHash(nonce)
+    // Apple requires a SHA256 hash of the raw nonce.
+    request.nonce = sha256(nonce)
 
     val coordinator = AppleReauthCoordinator { result ->
         activeReauthCoordinator = null // Clear strong reference

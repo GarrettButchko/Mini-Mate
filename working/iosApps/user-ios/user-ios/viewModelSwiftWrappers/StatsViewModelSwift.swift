@@ -23,7 +23,6 @@ class StatsViewModelSwift: ObservableObject {
     @Published private var _shareContent: String = ""
     @Published private var _isCooldown: Bool = false
     @Published private var _isCooldown2: Bool = false
-    @Published private var _analyzer: UserStatsAnalyzer? = nil
     @Published private var _isRefreshing: Bool = false
     @Published private var _allGames: [Game] = []
     @Published private var _gamesUpdateTrigger: Int = 0
@@ -41,7 +40,7 @@ class StatsViewModelSwift: ObservableObject {
     
     var latest: Bool {
         get { _latest }
-        set { kotlin.setLatest(value: newValue) }
+        set { kotlin.setLatest(value: newValue)}
     }
     
     var editOn: Bool {
@@ -65,14 +64,6 @@ class StatsViewModelSwift: ObservableObject {
     
     var isCooldown: Bool {
         get { _isCooldown }
-    }
-    
-    var isCooldown2: Bool {
-        get { _isCooldown2 }
-    }
-    
-    var analyzer: UserStatsAnalyzer? {
-        get { _analyzer }
     }
     
     var isRefreshing: Bool {
@@ -106,7 +97,9 @@ class StatsViewModelSwift: ObservableObject {
         
         Task {
             for await val in kotlin.latest {
-                self._latest = val.boolValue
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    self._latest = val.boolValue
+                }
             }
         }
         
@@ -137,18 +130,6 @@ class StatsViewModelSwift: ObservableObject {
         Task {
             for await val in kotlin.isCooldown {
                 self._isCooldown = val.boolValue
-            }
-        }
-        
-        Task {
-            for await val in kotlin.isCooldown2 {
-                self._isCooldown2 = val.boolValue
-            }
-        }
-        
-        Task {
-            for await val in kotlin.analyzer {
-                self._analyzer = val
             }
         }
         

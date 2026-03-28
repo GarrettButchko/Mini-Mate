@@ -4,6 +4,7 @@ import org.koin.dsl.module
 
 import com.garrettbutchko.minimate.repositories.UnifiedGameRepository
 import com.garrettbutchko.minimate.managers.ViewManager
+import com.garrettbutchko.minimate.managers.GameManager
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
 import com.garrettbutchko.minimate.repositories.LiveGameRepository
 import com.garrettbutchko.minimate.viewModels.CourseLocationViewModel
@@ -26,6 +27,9 @@ val sharedUserModule = module {
     // ViewManager
     single { ViewManager() }
     single<AppNavigationManaging> { get<ViewManager>() }
+
+    // GameManager
+    single { GameManager(authModel = get(), localGameRepo = get(), remoteGameRepo = get()) }
 
     //ViewModels
     single {
@@ -81,7 +85,8 @@ val sharedUserModule = module {
         StatsViewModel(
             localGameRepo = get(),
             remoteGameRepo = get(),
-            authModel = get()
+            authModel = get(),
+            gameManager = get()
         )
     }
 }

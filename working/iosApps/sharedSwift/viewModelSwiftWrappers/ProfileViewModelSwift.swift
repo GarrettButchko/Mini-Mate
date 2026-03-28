@@ -104,9 +104,18 @@ class ProfileViewModelSwift: ObservableObject {
         }
     }
     
-    func googleReauthAndDelete(isSheetPresented: Binding<Bool>) {
-        kotlinVM.googleReauthAndDelete { value in
-            isSheetPresented.wrappedValue = value.boolValue
+    func googleReauthAndDelete(authModel: AuthViewModelSwift, isSheetPresented: Binding<Bool>) {
+        authModel.reauthenticateWithGoogle { result in
+            switch result {
+            case .success(let tokens):
+                // Delegate all credential creation and deletion logic to Kotlin
+                self.kotlinVM.googleReauthAndDelete(idToken: tokens.idToken, accessToken: tokens.accessToken) { value in
+                    isSheetPresented.wrappedValue = value.boolValue
+                }
+            case .failure(let error):
+                self.botMessage = error.localizedDescription
+                self.isRed = true
+            }
         }
     }
         
