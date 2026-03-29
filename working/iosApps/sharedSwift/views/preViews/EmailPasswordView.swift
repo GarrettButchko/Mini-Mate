@@ -7,12 +7,11 @@ import SwiftUI
 import FirebaseAuth
 import SwiftData
 
-#if canImport(shared_user)
+#if MINIMATE
 import shared_user
-#elseif canImport(shared_admin)
+#elseif MANAGER
 import shared_admin
 #endif
-
 /// View for new users to sign up and create an account
 struct EmailPasswordView: View {
     @EnvironmentObject var viewManager: ViewManagerSwift

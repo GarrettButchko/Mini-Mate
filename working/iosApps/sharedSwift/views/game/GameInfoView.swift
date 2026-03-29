@@ -8,12 +8,11 @@
 
 import SwiftUI
 
-#if canImport(shared_user)
+#if MINIMATE
 import shared_user
-#elseif canImport(shared_admin)
+#elseif MANAGER
 import shared_admin
 #endif
-
 /// Displays and allows editing of the current user's profile
 struct GameInfoView: View {
     // The ViewModel now holds the presentation logic.

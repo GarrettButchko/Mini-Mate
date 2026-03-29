@@ -30,11 +30,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct admin_iosApp: App {
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-
+    @StateObject var authModel = AuthViewModelSwift()
+    @StateObject var viewManager = ViewManagerSwift()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authModel)
+                .environmentObject(viewManager)
         }
     }
 }

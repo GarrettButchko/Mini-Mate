@@ -5,9 +5,9 @@
 //  Created by Garrett Butchko on 3/21/26.
 //
 import Combine
-#if canImport(shared_user)
+#if MINIMATE
 import shared_user
-#elseif canImport(shared_admin)
+#elseif MANAGER
 import shared_admin
 #endif
 

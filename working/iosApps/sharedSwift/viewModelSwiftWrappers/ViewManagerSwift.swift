@@ -7,17 +7,14 @@
 
 import SwiftUI
 import Combine
+import Foundation
+import FirebaseAuth
 
-#if canImport(shared_user)
+#if MINIMATE
 import shared_user
-#elseif canImport(shared_admin)
+#elseif MANAGER
 import shared_admin
 #endif
-
-
-import Foundation
-import shared_user
-import FirebaseAuth // Assuming you're using the native Firebase SDK in iOS
 
 @MainActor
 class ViewManagerSwift: ObservableObject {
@@ -26,31 +23,13 @@ class ViewManagerSwift: ObservableObject {
     @Published var currentView: ViewType
     
     init() {
-        // 1. First, get the instance from your Koin helper
+        // 1. Get the instance from Koin
         let vm = KoinHelperParent.shared.getViewManager() as! ViewManager
         self.kotlinVM = vm
         
-        // 2. Determine initial state using Swift Firebase logic
-        let currentUser = Auth.auth().currentUser
+        // 2. Set the initial Swift state to whatever Kotlin determined in its init
+        self.currentView = vm.currentView.value
         
-        if let user = currentUser, user.isEmailVerified {
-            self.currentView = ViewType.Main(tab: 1)
-            vm.navigateToMain(tab: 1)
-        } else {
-            // Logic for signing out if not verified
-            if let user = currentUser, !user.isEmailVerified {
-                Task {
-                    do {
-                        try Auth.auth().signOut()
-                    } catch {
-                        print("Error signing out: \(error)")
-                    }
-                }
-            }
-            self.currentView = ViewType.Welcome()
-            vm.navigateToWelcome()
-        }
-    
         setupObservations()
     }
     

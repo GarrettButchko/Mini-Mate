@@ -24,14 +24,14 @@ actual class NetworkChecker private constructor() {
         nw_path_monitor_set_update_handler(monitor) { path: nw_path_t? ->
             val status = nw_path_get_status(path)
             isConnected = (status == nw_path_status_satisfied)
-            
+
             if (isConnected) {
                 println("✅ Internet is available")
             } else {
                 println("❌ No internet")
             }
         }
-        
+
         // Start monitoring on the background queue
         nw_path_monitor_set_queue(monitor, queue)
         nw_path_monitor_start(monitor)

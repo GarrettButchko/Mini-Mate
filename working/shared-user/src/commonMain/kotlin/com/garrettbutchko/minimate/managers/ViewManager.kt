@@ -1,11 +1,13 @@
 package com.garrettbutchko.minimate.managers
 
 import com.garrettbutchko.minimate.interfaces.AppNavigationManaging
+import com.garrettbutchko.minimate.repositories.FirebaseAuthRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 sealed class ViewType {
     data class Main(val tab: Int) : ViewType()
@@ -16,11 +18,25 @@ sealed class ViewType {
     data object Host : ViewType()
 }
 
-class ViewManager : AppNavigationManaging {
+class ViewManager(
+    private val authRepository: FirebaseAuthRepository
+) : AppNavigationManaging {
 
     private val _currentView = MutableStateFlow<ViewType>(ViewType.Welcome)
     val currentView: StateFlow<ViewType> = _currentView.asStateFlow()
     private val scope = CoroutineScope(Dispatchers.Main)
+
+    init {
+        val user = authRepository.currentUser
+        if (user != null && user.isEmailVerified) {
+            _currentView.value = ViewType.Main(tab = 1)
+        } else {
+            scope.launch {
+                authRepository.logout()
+            }
+            _currentView.value = ViewType.Welcome
+        }
+    }
 
     fun setCurrentView(view: ViewType) {
         _currentView.value = view

@@ -1,0 +1,685 @@
+//
+//  CourseSettingsView.swift
+//  MiniMate
+//
+//  Created by Garrett Butchko on 6/10/25.
+//
+import SwiftUI
+import MarqueeText
+import shared_admin
+
+struct CourseSettingsView: View {
+    
+    @EnvironmentObject var authModel: AuthViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    @StateObject private var viewModel = CourseSettingsViewModelSwift()
+    
+    var body: some View {
+        VStack {
+            CourseSettingsHeaderView()
+                .padding([.horizontal, .top])
+            
+            formView
+        }
+        .environmentObject(viewModel)
+    }
+    
+    private var formView: some View {
+        Form {
+            if let course = courseViewModel.selectedCourse {
+                let tier = course.tier
+                
+                if tier >= 1 {
+                    CourseSectionView(course: course)
+                    PasswordSectionView(course: course)
+                    SocialLinksSectionView()
+                }
+                
+                if tier >= 2 {
+                    AppearanceSectionView()
+                    AdSectionView()
+                    LeaderBoardSectionView()
+                }
+                
+                ParConfigurationSectionView()
+            }
+        }
+        .id(courseViewModel.selectedCourse?.tier ?? 0) // Force rebuild on tier change to prevent Section mismatch crashes
+        .contentMargins(.top, 16)
+    }
+}
+
+struct LeaderBoardSectionView: View {
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        if let selectedCourse = courseViewModel.selectedCourse {
+            Section("Leaderboard") {
+                Toggle("Leaderboard Active:", isOn: courseViewModel.binding(keyPath: \.leaderBoardActive) ?? Binding.constant(false))
+                    .toggleStyle(SwitchToggleStyle())
+                    .disabled(!selectedCourse.customPar)
+                    .onChange(of: selectedCourse.customPar) { _, new in
+                        if new == false {
+                            courseViewModel.selectedCourse?.leaderBoardActive = false
+                            courseViewModel.kotlin.debouncedSave(delayMs: 500)
+                        }
+                    }
+                
+                if selectedCourse.leaderBoardActive {
+                    Text("Players can now see this course's leaderboard and add their score to it if it follows the rules: no profanity, no incomplete games (no 0's)")
+                        .font(.footnote)
+                } else {
+                    Text("To activate this feature, you need 'Custom Pars' to be turned on.")
+                        .font(.footnote)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Header View
+struct CourseSettingsHeaderView: View {
+    
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Settings")
+                    .font(.title).fontWeight(.bold)
+                Spacer()
+                Button("User View") {
+                    viewModel.showReviewSheet = true
+                }
+                .sheet(isPresented: $viewModel.showReviewSheet) {
+                    if let course = courseViewModel.selectedCourse {
+                        let holeCount = course.pars.count == 0 ? 18 : course.pars.count
+                        
+                        let holes1 = (1...holeCount).map { number in
+                            Hole(id: generateUUID(), number: Int32(number), strokes: Int32(Int.random(in: 1...6)))
+                        }
+                        
+                        let holes2 = (1...holeCount).map { number in
+                            Hole(id: generateUUID(), number: Int32(number), strokes: Int32(Int.random(in: 1...6)))
+                        }
+                        
+                        GameReviewView(
+                            game: Game(
+                                id: "EXAMPLE",
+                                hostUserId: "admin",
+                                date: Firebase_firestoreTimestamp.companion.now(),
+                                completed: true,
+                                numberOfHoles: Int32(course.numHoles),
+                                started: true,
+                                dismissed: false,
+                                live: false,
+                                lastUpdated: Firebase_firestoreTimestamp.companion.now(),
+                                courseID: course.id,
+                                locationName: course.name,
+                                startTime: Firebase_firestoreTimestamp.companion.now(),
+                                endTime: Firebase_firestoreTimestamp.companion.now(),
+                                players: [
+                                    Player(id: "1", userId: "Example 1", name: "Garrett", photoURL: nil, email: nil, ballColorDT: nil, inGame: false, holes: holes1),
+                                    Player(id: "2", userId: "Example 2", name: "Joey", photoURL: nil, email: nil, ballColorDT: nil, inGame: false, holes: holes2)
+                                ]
+                            ),
+                            showBackToStatsButton: true,
+                            isInCourseSettings: true
+                        )
+                        .presentationDragIndicator(.visible)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Course Section
+struct CourseSectionView: View {
+    let course: Course
+    
+    var body: some View {
+        Section("Course") {
+            HStack {
+                Text("Id:")
+                Spacer()
+                Text(course.id)
+            }
+            
+            HStack {
+                Text("Name:")
+                Spacer()
+                Text(course.name)
+            }
+            
+            HStack {
+                Text("Tier:")
+                Spacer()
+                Text(String(course.tier))
+            }
+        }
+    }
+}
+
+// MARK: - Password Section
+struct PasswordSectionView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var authModel: AuthViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    let course: Course
+    
+    var body: some View {
+        Section("Password") {
+            HStack {
+                Text("Password:")
+                
+                if viewModel.showPassword {
+                    Text(course.password)
+                } else {
+                    Text("••••••••••")
+                }
+                Spacer()
+                Button {
+                    viewModel.showPassword.toggle()
+                } label: {
+                    !viewModel.showPassword ? Image(systemName: "eye").foregroundColor(.blue) : Image(systemName: "eye.slash").foregroundColor(.blue)
+                }
+            }
+            
+            Button {
+                viewModel.showChangePasswordAlert.toggle()
+            } label: {
+                Text("Change Password")
+                    .foregroundColor(.blue)
+            }
+            .alert("Change Password", isPresented: $viewModel.showChangePasswordAlert) {
+                SecureField("New Password", text: $viewModel.newPassword)
+                SecureField("Confirm Password", text: $viewModel.confirmPassword)
+                Button("Cancel", role: .cancel) {
+                    viewModel.kotlin.resetPasswordFields()
+                }
+                Button("Save") {
+                    viewModel.changePassword(course: $courseViewModel.selectedCourse, userID: authModel.userModel?.googleId)
+                }
+                .disabled(!viewModel.isValidPassword)
+            } message: {
+                Text("Enter and confirm your new password")
+            }
+        }
+    }
+}
+
+// MARK: - Logo Section
+struct LogoSectionView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        HStack {
+            Text("Logo:")
+            Spacer()
+            Button {
+                withAnimation {
+                    viewModel.showingPickerLogo = true
+                }
+            } label: {
+                if let courseLogo = courseViewModel.selectedCourse?.logo {
+                    AsyncImage(url: URL(string: courseLogo)) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                                .frame(width: 60)
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 60)
+                                .clipped()
+                        case .failure:
+                            Image(systemName: "photo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 60)
+                                .foregroundColor(.gray)
+                                .background(Color.gray.opacity(0.2))
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                } else {
+                    Image(systemName: "photo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60)
+                        .foregroundColor(.gray)
+                        .background(Color.gray.opacity(0.2))
+                }
+            }
+            .sheet(isPresented: $viewModel.showingPickerLogo) {
+                PhotoPicker(image: $viewModel.image)
+                    .onChange(of: viewModel.image) { old, newImage in
+                        guard let img = newImage else { return }
+                        viewModel.uploadLogoImage(img, course: $courseViewModel.selectedCourse)
+                    }
+            }
+        }
+    }
+}
+
+// MARK: - Scorecard Color Section
+struct ScorecardColorSectionView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        HStack {
+            Text("Scorecard Color:")
+            Spacer()
+            
+            ColorHolderView(
+                color: courseViewModel.selectedCourse?.scoreCardColor
+            ) {
+                courseViewModel.addTarget = .scoreCardColor
+                courseViewModel.showColor = true
+            } deleteFunction: {
+                viewModel.deleteTarget = .ScoreCardColor()
+            }
+        }
+    }
+}
+
+// MARK: - Course Colors Section
+struct CourseColorsSectionView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Course Colors")
+            }
+            ScrollView(.horizontal) {
+                HStack {
+                    if let colors = courseViewModel.selectedCourse?.courseColorsDT {
+                        ForEach(Array(colors.enumerated()), id: \.offset) { index, dt in
+                            let color = dt.toColor()
+                            
+                            ColorHolderView(color: color)
+                            { /* For adding Only */ }
+                            deleteFunction: {
+                                viewModel.deleteTarget = .CourseColor(index: Int32(index))
+                            }
+                        }
+                    }
+                    
+                    ColorHolderView() {
+                        courseViewModel.addTarget = .courseColor
+                        courseViewModel.showColor = true
+                    } deleteFunction: { /* For deleting Only */ }
+                }
+            }
+            .alert(item: $viewModel.deleteTarget) { target in
+                Alert(
+                    title: Text("Delete Color"),
+                    message: Text("Are you sure?"),
+                    primaryButton: .destructive(Text("Delete")) {
+                        viewModel.deleteColor(target: target, course: $courseViewModel.selectedCourse)
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Appearance Section
+struct AppearanceSectionView: View {
+    var body: some View {
+        Section("Appearance") {
+            LogoSectionView()
+            ScorecardColorSectionView()
+            CourseColorsSectionView()
+        }
+    }
+}
+
+// MARK: - Social Links Section
+struct SocialLinksSectionView: View {
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        Section("Social Links") {
+            if let course = courseViewModel.selectedCourse {
+                ForEach(Array(course.socialLinks.enumerated()), id: \.element.id) { index, link in
+                    SocialLinkRow(index: index)
+                }
+                .onDelete { indexSet in
+                    courseViewModel.selectedCourse?.socialLinks.remove(atOffsets: indexSet)
+                    courseViewModel.kotlin.immediateSave()
+                }
+            }
+            
+            Button {
+                withAnimation {
+                    courseViewModel.selectedCourse?.socialLinks.append(
+                        SocialLink(id: generateUUID(), platform: .instagram, url: "")
+                    )
+                }
+                courseViewModel.kotlin.immediateSave()
+            } label: {
+                Label("Add Social Link", systemImage: "plus.circle.fill")
+            }
+        }
+    }
+}
+
+struct SocialLinkRow: View {
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    let index: Int
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            Picker("Platform", selection: courseViewModel.socialPlatformBinding(index: index)) {
+                ForEach(SocialPlatform.allCases) { platform in
+                    Text(platform.displayName)
+                        .tag(platform)
+                }
+            }
+            .pickerStyle(.menu)
+        
+            TextField("URL", text: Binding(
+                get: {
+                    guard let links = courseViewModel.selectedCourse?.socialLinks,
+                          index < links.count else { return "" }
+                    return links[index].url
+                },
+                set: { newValue in
+                    guard let links = courseViewModel.selectedCourse?.socialLinks,
+                          index < links.count else { return }
+                    courseViewModel.selectedCourse?.socialLinks[index].url = newValue
+                    courseViewModel.kotlin.debouncedSave(delayMs: 500)
+                }
+            ))
+            .textContentType(.URL)
+            .keyboardType(.URL)
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .fill(Color(.subTwo))
+            )
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+
+// MARK: - Ad Section
+struct AdSectionView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        
+            Section("Ad") {
+                
+                
+                Toggle("Ad Active:", isOn: courseViewModel.binding(keyPath: \.customAdActive) ?? Binding.constant(false))
+                    .toggleStyle(SwitchToggleStyle())
+                
+                
+                if courseViewModel.selectedCourse?.customAdActive == true {
+                    AdTitleView()
+                    AdDescriptionView()
+                    AdLinkView()
+                    AdImageView()
+                }
+            }
+        
+    }
+}
+
+// MARK: - Ad Subviews
+struct AdTitleView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Ad Title:")
+                Spacer()
+            }
+            Spacer()
+            TextField("title", text: courseViewModel.limitedTextBinding(keyPath: \.adTitle, deleteKey: "adTitle", limit: 32))
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .fill(.subTwo)
+                )
+        }
+    }
+}
+
+struct AdDescriptionView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Ad Description:")
+                Spacer()
+            }
+            Spacer()
+            TextField("description", text: courseViewModel.limitedTextBinding(keyPath: \.adDescription, deleteKey: "adDescription", limit: 40))
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .fill(.subTwo)
+                )
+        }
+    }
+}
+
+struct AdLinkView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        HStack {
+            Text("Ad Link:")
+            Spacer()
+            TextField("ad link (https://...)", text: courseViewModel.optionalBinding(keyPath: \.adLink, deleteKey: "adLink"))
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .fill(.subTwo)
+                )
+                .keyboardType(.URL) // This adds the URL-specific keys
+                .autocorrectionDisabled() // Prevents "https" from being "corrected"
+                .textInputAutocapitalization(.never) // Keeps everything lowercase
+        }
+    }
+}
+
+struct AdImageView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    
+    var body: some View {
+        HStack {
+            Text("Ad Image:")
+            Spacer()
+            Button {
+                withAnimation {
+                    viewModel.showingPickerAd = true
+                }
+            } label: {
+                if let courseImage = courseViewModel.selectedCourse?.adImage {
+                    AsyncImage(url: URL(string: courseImage)) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                                .frame(width: 60)
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipped()
+                        case .failure:
+                            Image(systemName: "photo")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 60)
+                                .foregroundColor(.gray)
+                                .background(Color.gray.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                } else {
+                    Image(systemName: "photo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60)
+                        .foregroundColor(.gray)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .sheet(isPresented: $viewModel.showingPickerAd) {
+                PhotoPicker(image: $viewModel.image)
+                    .onChange(of: viewModel.image) { old, newImage in
+                        guard let img = newImage else { return }
+                        viewModel.uploadAdImage(img, course: $courseViewModel.selectedCourse)
+                    }
+            }
+        }
+    }
+}
+
+// MARK: - Par Configuration Section
+struct ParConfigurationSectionView: View {
+    @EnvironmentObject var viewModel: CourseSettingsViewModelSwift
+    @EnvironmentObject var courseViewModel: CourseListViewModelSwift
+    let LBRepo = CourseLeaderboardRepository()
+    
+    @State private var showingCustomParAlert = false
+    @State private var pendingToggleValue = false
+    
+    var body: some View {
+        if let course = courseViewModel.selectedCourse {
+            Section("Par Configuration") {
+                
+                // We use a local toggle that doesn't hit the ViewModel directly
+                Toggle("Custom Pars", isOn: Binding(
+                    get: { course.customPar },
+                    set: { newValue in
+                        if newValue == false {
+                            // If turning OFF, show warning
+                            pendingToggleValue = newValue
+                            showingCustomParAlert = true
+                        } else {
+                            
+                            courseViewModel.selectedCourse?.pars = Array(repeating: 2, count: 18)
+                            // If turning ON, just do it (or add another alert if desired)
+                            courseViewModel.selectedCourse?.customPar = true
+                        }
+                        courseViewModel.kotlin.debouncedSave(delayMs: 500)
+                    }
+                ))
+                .alert("Disable Custom Pars?", isPresented: $showingCustomParAlert) {
+                    Button("Reset", role: .destructive) {
+                        // Call your repository to wipe the leaderboard
+                        // and update the view model
+                        withAnimation(){
+                            courseViewModel.selectedCourse?.customPar = false
+                        }
+                        courseViewModel.kotlin.debouncedSave(delayMs: 500)
+                        
+                        // Call your repo here:'
+                        Task{
+                            do {
+                                let _ = try await LBRepo.deleteAllEntries(courseID: course.id)
+                            } catch {
+                                print("Error deleting leaderboard entries: \(error)")
+                            }
+                        }
+                    }
+                    Button("Cancel", role: .cancel) {
+                        pendingToggleValue = true // Keep it on
+                    }
+                } message: {
+                    Text("Turning this off will permanently delete your leaderboard and reset all hole pars to default. This cannot be undone.")
+                }
+                
+                if course.customPar == true {
+                    Text("Warning: Turning this off will delete your leaderboard if you have one.")
+                        .font(.footnote)
+                        .foregroundStyle(.red) // Note: .tint doesn't work on Text, use .foregroundStyle
+                } else {
+                    Text("Turning this on will show your course on the minimate map as a supported course and allow you to set custom pars for each hole. It will also enable the leaderboard feature, allowing players to submit their scores for this course.")
+                        .font(.footnote)
+                }
+            }
+            if let pars = courseViewModel.selectedCourse?.pars, pars.count > 0 && course.customPar {
+                Section("Par Preview") {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(Array(pars.enumerated()), id: \.offset) { index, par in
+                                VStack(spacing: 4) {
+                                    Text("H\(index + 1)")
+                                        .font(.caption2)
+                                        .fontWeight(.semibold)
+                                    Text("\(par)")
+                                        .font(.headline)
+                                }
+                                .frame(width: 40, height: 50)
+                                .background(.subThree)
+                                .cornerRadius(8)
+                                .foregroundStyle(.white)
+                            }
+                        }
+                    }
+                    
+                    .padding(.vertical, 8)
+                }
+                Section{
+                    // Toggle to show/hide detailed configuration
+                    Toggle("Show Configuration", isOn: $viewModel.showParConfiguration)
+                        .toggleStyle(SwitchToggleStyle())
+                }
+                Section{
+                    // Detailed Par Configuration
+                    if viewModel.showParConfiguration {
+                        if let customPar = courseViewModel.selectedCourse?.customPar, customPar == true {
+                            HStack {
+                                Text("Number Of Holes")
+                                NumberPickerView(selectedNumber: courseViewModel.numHolesBinding(), minNumber: 9, maxNumber: 21)
+                                    .frame(height: 60)
+                            }
+                        }
+                        
+                        ForEach(Array(pars.enumerated()), id: \.offset) { index, par in
+                            HStack {
+                                Text("Hole \(index + 1):")
+                                Spacer()
+                                
+                                NumberPickerView(
+                                    selectedNumber: courseViewModel.parBinding(index: index),
+                                    minNumber: 0,
+                                    maxNumber: 10
+                                )
+                                .frame(width: 75)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

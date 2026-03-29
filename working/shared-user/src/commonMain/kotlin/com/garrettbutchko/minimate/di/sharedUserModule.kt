@@ -25,7 +25,7 @@ val sharedUserModule = module {
     single { LiveGameRepository() }
 
     // ViewManager
-    single { ViewManager() }
+    single { ViewManager(authRepository = get()) }
     single<AppNavigationManaging> { get<ViewManager>() }
 
     // GameManager

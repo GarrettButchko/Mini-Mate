@@ -7,12 +7,12 @@
 
 import SwiftUI
 import Combine
-
-#if canImport(shared_user)
-import shared_user
-#elseif canImport(shared_admin)
-import shared_admin
 import FirebaseAuth
+
+#if MINIMATE
+import shared_user
+#elseif MANAGER
+import shared_admin
 #endif
 
 @MainActor

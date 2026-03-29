@@ -19,7 +19,8 @@ extension String {
             "purple": .purple,
             "pink": .pink,
             "cyan": .cyan,
-            "brown": .brown
+            "brown": .brown,
+            "main_opp": .mainOpp
         ]
 
         return map[lowercased]

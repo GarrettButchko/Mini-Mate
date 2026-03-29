@@ -1,8 +1,8 @@
 import Foundation
 
-#if canImport(shared_user)
+#if MINIMATE
 import shared_user
-#elseif canImport(shared_admin)
+#elseif MANAGER
 import shared_admin
 #endif
 

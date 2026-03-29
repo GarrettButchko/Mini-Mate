@@ -1,10 +1,13 @@
 package com.garrettbutchko.minimate.repositories.analytics
 
 import com.garrettbutchko.minimate.extensions.toLocalDate
+import com.garrettbutchko.minimate.extensions.toTimestamp
+import com.garrettbutchko.minimate.utilities.DateUtils
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 sealed class AnalyticsRange {
     object Last7 : AnalyticsRange()
@@ -36,4 +39,46 @@ sealed class AnalyticsRange {
     }
 
     data class RangeResult(val start: LocalDate, val end: LocalDate, val dStart: LocalDate, val dEnd: LocalDate)
+
+    val startDate: LocalDate get() = dates().start
+    val endDate: LocalDate get() = dates().end
+
+    val startDelta: LocalDate get() = dates().dStart
+    val endDelta: LocalDate get() = dates().dEnd
+
+    val title: String get() = when (this) {
+        Last7 -> "Last 7 days"
+        Last30 -> "Last 30 days"
+        Last90 -> "Last 90 days"
+        is Custom -> "Custom"
+    }
+
+    val isCustom: Boolean get() = this is Custom
+
+    val daysBetween: Int get() = (endDate.toEpochDays() - startDate.toEpochDays()).toInt()
+
+    val daysInMainRange: List<String>
+        get() {
+            val dates = this.dates()
+            val days = mutableListOf<String>()
+            var current = dates.start
+            while (current <= dates.end) {
+                days.add(DateUtils.makeDayID(current.toTimestamp()))
+                current = current.plus(1, DateTimeUnit.DAY)
+            }
+            return days
+        }
+
+    val daysInDeltaRange: List<String>
+        get() {
+            val dates = this.dates()
+            val days = mutableListOf<String>()
+            var current = dates.dStart
+            while (current <= dates.dEnd) {
+                days.add(DateUtils.makeDayID(current.toTimestamp()))
+                current = current.plus(1, DateTimeUnit.DAY)
+            }
+            return days
+        }
+
 }

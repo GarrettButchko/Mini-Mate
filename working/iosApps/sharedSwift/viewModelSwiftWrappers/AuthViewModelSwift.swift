@@ -15,9 +15,9 @@ import FirebaseCore
 import SwiftData
 import AuthenticationServices
 
-#if canImport(shared_user)
+#if MINIMATE
 import shared_user
-#elseif canImport(shared_admin)
+#elseif MANAGER
 import shared_admin
 #endif
 

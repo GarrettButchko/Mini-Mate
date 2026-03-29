@@ -116,6 +116,6 @@ enum class SocialPlatform {
 @Serializable
 data class SocialLink(
     val id: String = generateUUID(),
-    val platform: SocialPlatform,
-    val url: String
+    var platform: SocialPlatform,
+    var url: String
 )

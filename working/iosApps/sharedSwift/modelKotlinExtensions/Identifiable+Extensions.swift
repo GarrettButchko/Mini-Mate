@@ -1,8 +1,8 @@
 import Foundation
 
-#if canImport(shared_user)
+#if MINIMATE
 import shared_user
-#elseif canImport(shared_admin)
+#elseif MANAGER
 import shared_admin
 #endif
 
@@ -22,13 +22,15 @@ extension SocialLink: @retroactive Identifiable {
 
 extension Game: @retroactive Identifiable {
     public var newId: String {
-        return self.id
+        get { self.id }
+        set { self.id = newValue }
     }
 }
 
 extension GameDTO: @retroactive Identifiable {
     public var newId: String {
-        return self.id
+        get { self.id }
+        set { /* id is val in GameDTO */ }
     }
 }
 
@@ -89,3 +91,61 @@ extension DeleteAlertType: @retroactive Identifiable {
         }
     }
 }
+
+#if MANAGER
+extension PlayerActivity: @retroactive Identifiable {
+    public var newId: String {
+        return self.id
+    }
+}
+
+extension GameDurationActivity : @retroactive Identifiable {
+    public var newId: String {
+        return self.id
+    }
+}
+
+extension HoleHeatmapData : @retroactive Identifiable {
+    public var newId: String {
+        return self.id
+    }
+}
+
+extension ColorDeleteTarget: @retroactive Identifiable {
+    public var id: Int {
+        if let courseColor = self as? ColorDeleteTarget.CourseColor {
+            return Int(courseColor.index)
+        } else {
+            return -1
+        }
+    }
+}
+
+extension SocialPlatform: @retroactive Identifiable {
+    public var id: Int {
+        self.hashValue
+    }
+    
+    var displayName: String {
+        return self.name.lowercased().capitalized
+    }
+}
+
+extension LeaderboardEntry: @retroactive Identifiable {
+    public var newId: String {
+        return self.id
+    }
+}
+
+extension HoleDifficultyData: @retroactive Identifiable {
+    public var newId: String {
+        return self.id
+    }
+}
+
+extension HourData: @retroactive Identifiable {
+    public var newId: String {
+        return self.id
+    }
+}
+#endif
