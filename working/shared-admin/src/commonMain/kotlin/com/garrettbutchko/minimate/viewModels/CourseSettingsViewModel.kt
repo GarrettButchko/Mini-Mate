@@ -1,6 +1,10 @@
 package com.garrettbutchko.minimate.viewModels
 
+import com.garrettbutchko.minimate.Platform
 import com.garrettbutchko.minimate.dataModels.courseModels.Course
+import com.garrettbutchko.minimate.dataModels.courseModels.SocialLink
+import com.garrettbutchko.minimate.dataModels.courseModels.SocialPlatform
+import com.garrettbutchko.minimate.di.platformModule
 import com.garrettbutchko.minimate.repositories.CourseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -107,19 +111,13 @@ open class CourseSettingsViewModel(
     // MARK: - Password Change
 
     fun changePassword(course: Course?, userID: String?, onCourseUpdated: (Course) -> Unit) {
-        if (course == null) return
-
-        if (!isValidPassword) return
+        if (course == null || !isValidPassword || userID == null) return
         
-        val updatedCourse = course.copy(password = _newPassword.value)
+        val updatedCourse = course.copy(password = _newPassword.value, adminIDs = listOf(userID))
         onCourseUpdated(updatedCourse)
         
         coroutineScope.launch {
-            val complete = courseRepo.addOrUpdateCourse(updatedCourse).isSuccess
-            if (complete && userID != null) {
-                // Not preserving keeping only AdminID since no such method was exported.
-                // Assuming it's currently unused or needs implementation.
-            }
+            courseRepo.addOrUpdateCourse(updatedCourse).isSuccess
         }
         
         resetPasswordFields()

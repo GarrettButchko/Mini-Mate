@@ -110,7 +110,7 @@ data class CourseEmail (
 
 @Serializable
 enum class SocialPlatform {
-    INSTAGRAM, FACEBOOK, TIKTOK, YOUTUBE, WEBSITE
+    DEFAULT, INSTAGRAM, FACEBOOK, TIKTOK, YOUTUBE, WEBSITE
 }
 
 @Serializable

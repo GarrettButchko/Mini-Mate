@@ -236,7 +236,7 @@ open class AuthViewModel(
                     uid = firebaseUser.uid,
                     email = firebaseUser.email,
                     displayName = firebaseUser.displayName,
-                    photoURL = null // Safe access: avoiding crash due to GitLive Firebase SDK interop issue on iOS
+                    photoURL = firebaseUser.photoURL
                 )
 
                 createOrSignInUserAndNavigateToHome(

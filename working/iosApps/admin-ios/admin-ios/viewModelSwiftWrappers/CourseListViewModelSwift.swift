@@ -166,6 +166,7 @@ class CourseListViewModelSwift: ObservableObject {
                 return value[keyPath: keyPath]
             },
             set: { [weak self] newValue in
+                self?.objectWillChange.send()
                 self?.kotlin.updateCourseField(debounce: debounce) { course in
                     course[keyPath: keyPath] = newValue
                     return course
@@ -185,6 +186,7 @@ class CourseListViewModelSwift: ObservableObject {
                 self.selectedCourse?[keyPath: keyPath] ?? ""
             },
             set: { [weak self] newValue in
+                self?.objectWillChange.send()
                 self?.kotlin.updateOptionalCourseField(
                     newValue: newValue,
                     deleteKey: deleteKey,
@@ -210,6 +212,7 @@ class CourseListViewModelSwift: ObservableObject {
                 return courseValue.socialLinks[index].platform
             },
             set: { [weak self] newValue in
+                self?.objectWillChange.send()
                 self?.kotlin.updateSocialPlatform(index: Int32(index), newPlatform: newValue, debounce: debounce)
             }
         )
@@ -227,6 +230,7 @@ class CourseListViewModelSwift: ObservableObject {
                 self.selectedCourse?[keyPath: keyPath] ?? ""
             },
             set: { [weak self] newValue in
+                self?.objectWillChange.send()
                 self?.kotlin.updateLimitedCourseField(
                     newValue: newValue,
                     limit: Int32(limit),
@@ -244,6 +248,7 @@ class CourseListViewModelSwift: ObservableObject {
         Binding(
             get: { self.selectedCourse?.customPar ?? false },
             set: { [weak self] newValue in
+                self?.objectWillChange.send()
                 self?.kotlin.updateCustomPar(customPar: newValue)
             }
         )
@@ -254,6 +259,7 @@ class CourseListViewModelSwift: ObservableObject {
             get: { Int(self.selectedCourse?.numHoles ?? 18) },
             set: { [weak self] newValue in
                 withAnimation {
+                    self?.objectWillChange.send()
                     self?.kotlin.updateNumHoles(newHoles: Int32(newValue))
                 }
             }
@@ -268,6 +274,7 @@ class CourseListViewModelSwift: ObservableObject {
                 return Int(truncating: courseValue.pars[index])
             },
             set: { [weak self] newValue in
+                self?.objectWillChange.send()
                 self?.kotlin.updatePar(index: Int32(index), newPar: Int32(newValue))
             }
         )

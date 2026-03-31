@@ -24,6 +24,8 @@ extension SocialLink {
             return Image("youtube")
         case .website:
             return Image(systemName: "globe")
+        case .default:
+            return Image(systemName: "globe")
         }
     }
 }

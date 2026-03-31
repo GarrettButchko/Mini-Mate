@@ -118,7 +118,7 @@ open class CourseListViewModel(
 
     fun getCourses() {
         _loadingCourse.value = true
-        val ids = authModel.userModel?.value?.adminCourses
+        val ids = authModel.userModel.value?.adminCourses
         
         if (!hasCourse || ids.isNullOrEmpty()) {
             _loadingCourse.value = false
@@ -158,7 +158,7 @@ open class CourseListViewModel(
             val courseID = courseRepo.findCourseIDWithPassword(_password.value)
             
             if (courseID != null) {
-                val currentUser = authModel!!.userModel.value
+                val currentUser = authModel.userModel.value
                 val currentAdminCourses = currentUser?.adminCourses ?: emptyList()
                 
                 if (currentAdminCourses.contains(courseID)) {
@@ -167,15 +167,15 @@ open class CourseListViewModel(
                 } else {
                     if (currentUser != null) {
                         val updatedUser = currentUser.copy(adminCourses = currentAdminCourses + courseID)
-                        authModel!!.setUserModel(updatedUser)
+                        authModel.setUserModel(updatedUser)
                         
-                        val currentUserId = authModel!!.currentUserIdentifier
+                        val currentUserId = authModel.currentUserIdentifier
                         if (currentUserId != null) {
                             userRepo.saveUnified(currentUserId, updatedUser)
                         }
                     }
                     
-                    val email = authModel!!.firebaseUser.value?.email
+                    val email = authModel.firebaseUser.value?.email
                     if (email != null) {
                         val success = courseRepo.addAdminIDtoCourse(email, courseID)
                         if (success) {

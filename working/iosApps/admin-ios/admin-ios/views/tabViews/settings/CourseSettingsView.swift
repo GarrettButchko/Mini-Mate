@@ -7,6 +7,7 @@
 import SwiftUI
 import MarqueeText
 import shared_admin
+import Combine
 
 struct CourseSettingsView: View {
     
@@ -355,20 +356,27 @@ struct SocialLinksSectionView: View {
                     SocialLinkRow(index: index)
                 }
                 .onDelete { indexSet in
+                    courseViewModel.objectWillChange.send()
                     courseViewModel.selectedCourse?.socialLinks.remove(atOffsets: indexSet)
                     courseViewModel.kotlin.immediateSave()
                 }
             }
             
-            Button {
-                withAnimation {
-                    courseViewModel.selectedCourse?.socialLinks.append(
-                        SocialLink(id: generateUUID(), platform: .instagram, url: "")
-                    )
+            if let links = courseViewModel.selectedCourse?.socialLinks, links.count < 5 {
+                Button {
+                    withAnimation {
+                        // Manually tell SwiftUI that the ViewModel is about to change
+                        courseViewModel.objectWillChange.send()
+
+                        courseViewModel.selectedCourse?.socialLinks.append(
+                            SocialLink(id: generateUUID(), platform: .default, url: "")
+                        )
+                    }
+                    courseViewModel.kotlin.immediateSave()
+                } label: {
+                    Label("Add Social Link", systemImage: "plus.circle.fill")
                 }
-                courseViewModel.kotlin.immediateSave()
-            } label: {
-                Label("Add Social Link", systemImage: "plus.circle.fill")
+                .transition(.opacity.animation(.easeInOut(duration: 0.2)))
             }
         }
     }
@@ -380,13 +388,50 @@ struct SocialLinkRow: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            Picker("Platform", selection: courseViewModel.socialPlatformBinding(index: index)) {
-                ForEach(SocialPlatform.allCases) { platform in
-                    Text(platform.displayName)
-                        .tag(platform)
+            HStack(spacing: 12) { // Added spacing for better layout
+                
+                // 1. ADDED: This will appear to the left of the Menu
+                let currentPlatform = courseViewModel.socialPlatformBinding(index: index).wrappedValue
+                
+                Text("Platform \(index + 1)")
+                
+                Spacer()
+                
+                // 2. Your existing Menu
+                Menu {
+                    ForEach(SocialPlatform.allCases, id: \.id) { platform in
+                        let courseContains = courseViewModel.selectedCourse?.socialLinks.contains(where: { $0.platform == platform }) ?? false
+                        
+                        // Allow if it doesn't exist, is default, or is the CURRENTLY selected one
+                        if !courseContains || platform == .default || platform == currentPlatform {
+                            Button("\(platform.displayName.capitalized)") {
+                                withAnimation {
+                                    courseViewModel.objectWillChange.send()
+                                    courseViewModel.socialPlatformBinding(index: index).wrappedValue = platform
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(currentPlatform.displayName.capitalized)
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    // If you want the background to only be behind the text/chevron:
+                    .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                 }
             }
-            .pickerStyle(.menu)
         
             TextField("URL", text: Binding(
                 get: {
@@ -397,6 +442,7 @@ struct SocialLinkRow: View {
                 set: { newValue in
                     guard let links = courseViewModel.selectedCourse?.socialLinks,
                           index < links.count else { return }
+                    courseViewModel.objectWillChange.send()
                     courseViewModel.selectedCourse?.socialLinks[index].url = newValue
                     courseViewModel.kotlin.debouncedSave(delayMs: 500)
                 }
@@ -579,6 +625,7 @@ struct ParConfigurationSectionView: View {
                 Toggle("Custom Pars", isOn: Binding(
                     get: { course.customPar },
                     set: { newValue in
+                        courseViewModel.objectWillChange.send()
                         if newValue == false {
                             // If turning OFF, show warning
                             pendingToggleValue = newValue

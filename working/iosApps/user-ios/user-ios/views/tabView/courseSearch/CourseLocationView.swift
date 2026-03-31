@@ -211,7 +211,9 @@ struct CourseSocialMediaCard: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack {
                     ForEach(course.socialLinks) { link in
-                        socialLinkButton(for: link)
+                        if link.platform != .default {
+                            socialLinkButton(for: link)
+                        }
                     }
                 }
             }
