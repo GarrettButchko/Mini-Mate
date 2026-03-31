@@ -266,4 +266,15 @@ class CourseRepository {
             return null
         }
     }
+
+    suspend fun deleteCourseImage(id: String, key: String): Boolean {
+        val ref = storage.reference.child(id).child("$key.png")
+        return try {
+            ref.delete()
+            true
+        } catch (e: Exception) {
+            log.e(e) { "❌ Failed to delete course image:" + e.message }
+            false
+        }
+    }
 }

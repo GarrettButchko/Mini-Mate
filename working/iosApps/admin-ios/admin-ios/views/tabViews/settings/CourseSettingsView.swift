@@ -220,41 +220,58 @@ struct LogoSectionView: View {
         HStack {
             Text("Logo:")
             Spacer()
-            Button {
-                withAnimation {
-                    viewModel.showingPickerLogo = true
-                }
-            } label: {
-                if let courseLogo = courseViewModel.selectedCourse?.logo {
-                    AsyncImage(url: URL(string: courseLogo)) { phase in
-                        switch phase {
-                        case .empty:
-                            ProgressView()
-                                .frame(width: 60)
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 60)
-                                .clipped()
-                        case .failure:
-                            Image(systemName: "photo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 60)
-                                .foregroundColor(.gray)
-                                .background(Color.gray.opacity(0.2))
-                        @unknown default:
-                            EmptyView()
-                        }
+            HStack{
+                Button {
+                    withAnimation {
+                        viewModel.showingPickerLogo = true
                     }
-                } else {
-                    Image(systemName: "photo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 60)
-                        .foregroundColor(.gray)
-                        .background(Color.gray.opacity(0.2))
+                } label: {
+                    
+                    if let courseLogo = courseViewModel.selectedCourse?.logo {
+                        AsyncImage(url: URL(string: courseLogo)) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                                    .frame(width: 60)
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 60)
+                                    .clipped()
+                            case .failure:
+                                Image(systemName: "photo")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 60)
+                                    .foregroundColor(.gray)
+                                    .background(Color.gray.opacity(0.2))
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                    } else {
+                        Image(systemName: "photo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 60)
+                            .foregroundColor(.gray)
+                            .background(Color.gray.opacity(0.2))
+                    }
+                    
+                    
+                    
+                }
+                if let course = courseViewModel.selectedCourse, course.logo != nil {
+                    Button{
+                        viewModel.kotlin.deleteLogoImage(course: course) { course in
+                            courseViewModel.selectedCourse = course
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.white, .red) // Icon is white, circle is gray
+                            .font(.system(size: 24))
+                    }
                 }
             }
             .sheet(isPresented: $viewModel.showingPickerLogo) {
@@ -557,44 +574,57 @@ struct AdImageView: View {
         HStack {
             Text("Ad Image:")
             Spacer()
-            Button {
-                withAnimation {
-                    viewModel.showingPickerAd = true
-                }
-            } label: {
-                if let courseImage = courseViewModel.selectedCourse?.adImage {
-                    AsyncImage(url: URL(string: courseImage)) { phase in
-                        switch phase {
-                        case .empty:
-                            ProgressView()
-                                .frame(width: 60)
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 60)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .clipped()
-                        case .failure:
-                            Image(systemName: "photo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 60)
-                                .foregroundColor(.gray)
-                                .background(Color.gray.opacity(0.2))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                        @unknown default:
-                            EmptyView()
-                        }
+            HStack{
+                Button {
+                    withAnimation {
+                        viewModel.showingPickerAd = true
                     }
-                } else {
-                    Image(systemName: "photo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 60)
-                        .foregroundColor(.gray)
-                        .background(Color.gray.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                } label: {
+                    if let courseImage = courseViewModel.selectedCourse?.adImage {
+                        AsyncImage(url: URL(string: courseImage)) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                                    .frame(width: 60)
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 60)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .clipped()
+                            case .failure:
+                                Image(systemName: "photo")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 60)
+                                    .foregroundColor(.gray)
+                                    .background(Color.gray.opacity(0.2))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                    } else {
+                        Image(systemName: "photo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 60)
+                            .foregroundColor(.gray)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                if let course = courseViewModel.selectedCourse, course.logo != nil {
+                    Button{
+                        viewModel.kotlin.deleteAdImage(course: course) { course in
+                            courseViewModel.selectedCourse = course
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.white, .red) // Icon is white, circle is gray
+                            .font(.system(size: 24))
+                    }
                 }
             }
             .sheet(isPresented: $viewModel.showingPickerAd) {

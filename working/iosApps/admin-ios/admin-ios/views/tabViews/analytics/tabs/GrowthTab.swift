@@ -7,6 +7,7 @@
 
 import SwiftUI
 import shared_admin
+import Combine
 
 struct GrowthTab: View {
     @EnvironmentObject var VM: GrowthViewModelSwift
@@ -79,16 +80,20 @@ struct GrowthTab: View {
                     Menu {
                         Button("Total") {
                             withAnimation {
+                                VM.objectWillChange.send()
                                 VM.growthChartTopic = .total
                             }
                         }
                         Button("First-Time") {
                             withAnimation {
+                                VM.objectWillChange.send()
                                 VM.growthChartTopic = .first
                             }
                         }
                         Button("Returning") {
+                            
                             withAnimation {
+                                VM.objectWillChange.send()
                                 VM.growthChartTopic = .returning
                             }
                         }

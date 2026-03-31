@@ -95,6 +95,15 @@ open class CourseSettingsViewModel(
         }
     }
 
+    fun deleteLogoImage(course: Course, onCourseUpdated: (Course) -> Unit) {
+        coroutineScope.launch {
+            val updatedCourse = course.copy(logo = null)
+            onCourseUpdated(updatedCourse)
+            courseRepo.deleteCourseItem(course.id, "logo")
+            courseRepo.deleteCourseImage(course.id, "logoImage")
+        }
+    }
+
     fun uploadAdImage(imageData: Data, course: Course, onCourseUpdated: (Course) -> Unit) {
         coroutineScope.launch {
             val url = courseRepo.uploadCourseImage(course.id, imageData, "adImage")
@@ -105,6 +114,15 @@ open class CourseSettingsViewModel(
             } else {
                 println("❌ Photo upload failed")
             }
+        }
+    }
+
+    fun deleteAdImage(course: Course, onCourseUpdated: (Course) -> Unit) {
+        coroutineScope.launch {
+            val updatedCourse = course.copy(adImage = null)
+            onCourseUpdated(updatedCourse)
+            courseRepo.deleteCourseItem(course.id, "adImage")
+            courseRepo.deleteCourseImage(course.id, "adImage")
         }
     }
 
