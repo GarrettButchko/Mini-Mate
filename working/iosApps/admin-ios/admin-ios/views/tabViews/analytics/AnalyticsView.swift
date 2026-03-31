@@ -165,19 +165,23 @@ struct AnalyticsView: View {
             GrowthTab()
                 .environmentObject(VM.growthVM)
                 .transition(.opacity)
+                
         case .operations:
             OperationsTab()
                 .environmentObject(VM.operationsVM)
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
+                
         case .experience:
             ExpierenceTab()
                 .environmentObject(VM.experienceVM)
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
+                
         default:
             EmptyView()
         }
+        
     }
 
     var topBar: some View {

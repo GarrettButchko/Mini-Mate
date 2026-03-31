@@ -2,6 +2,7 @@ package com.garrettbutchko.minimate.viewModels.analytics
 
 import com.garrettbutchko.minimate.dataModels.courseModels.Course
 import com.garrettbutchko.minimate.dataModels.courseModels.DailyDoc
+import com.garrettbutchko.minimate.extensions.format
 import com.garrettbutchko.minimate.generateUUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

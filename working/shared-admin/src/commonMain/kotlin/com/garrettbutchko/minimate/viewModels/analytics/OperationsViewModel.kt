@@ -1,6 +1,7 @@
 package com.garrettbutchko.minimate.viewModels.analytics
 
 import com.garrettbutchko.minimate.dataModels.courseModels.DailyDoc
+import com.garrettbutchko.minimate.extensions.format
 import com.garrettbutchko.minimate.generateUUID
 import com.garrettbutchko.minimate.repositories.analytics.AnalyticsRange
 import kotlinx.coroutines.Dispatchers
@@ -269,7 +270,7 @@ open class OperationsViewModel {
         
         var slowestSecondsDelta: Long = 0
         
-        for (doc in rangeDailyDocs) { // Swift had a bug here, it was iterating over rangeDailyDocs again instead of deltaDailyDocs
+        for (doc in deltaDailyDocs) {
             if (doc.gamesPlayed <= 0) continue
             val avgForDay = doc.totalRoundSeconds / doc.gamesPlayed.toLong()
             if (avgForDay > slowestSecondsDelta) {

@@ -11,7 +11,6 @@ import MarqueeText
 import shared_admin
 
 struct MainView: View {
-    @Environment(\.modelContext) private var context
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     
     @EnvironmentObject var authModel: AuthViewModelSwift
@@ -143,6 +142,7 @@ struct MainView: View {
                                             .subVsColor(makeColor: viewModel.selectedCourse?.scoreCardColor)
                                             .cardShadow()
                                     }
+                                    .allowsHitTesting(false)
                             } else if let report = analyticsVM.healthReport {
                                 Button{
                                     showHealthRatingSheet = true
@@ -175,10 +175,11 @@ struct MainView: View {
                                         .subVsColor(makeColor: viewModel.selectedCourse?.scoreCardColor)
                                         .cardShadow()
                                 }
+                                .allowsHitTesting(false)
                             }
                         }
                         .blur(radius: viewModel.selectedCourse?.tier ?? 0 >= 3 ? 0 : 6)
-                        .allowsHitTesting(false)
+                        
                         
                         if (viewModel.selectedCourse?.tier ?? 0) < 3 {
                             VStack(spacing: 8) {

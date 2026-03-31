@@ -13,7 +13,7 @@ struct ExpandedPlayerTierContent: View {
     let emails: [String]
     let previewEmails: [String]
     let onCopyToClipboard: () -> Void
-    let onDownloadCSV: () -> Void
+    let csvURL: URL?
     
     @State private var showCopiedCheck = false
     
@@ -75,20 +75,38 @@ struct ExpandedPlayerTierContent: View {
                     .cornerRadius(10)
                 }
                 
-                // Download CSV button
-                Button(action: onDownloadCSV) {
+                // Native SwiftUI ShareLink (Reduces UIActivityViewController issues)
+                if let url = csvURL {
+                    ShareLink(item: url, preview: SharePreview("\(tier.label) Players CSV", icon: Image(systemName: "doc.text"))) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.subheadline)
+                            Text("Download CSV")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(10)
+                        .background(.subThree)
+                        .foregroundStyle(.white)
+                        .cornerRadius(10)
+                    }
+                } else {
+                    // Disabled placeholder if URL is not ready
                     HStack(spacing: 8) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.subheadline)
-                        Text("Download CSV")
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .tint(.white)
+                        Text("Preparing CSV...")
                             .font(.subheadline)
                             .fontWeight(.medium)
                         Spacer()
                     }
                     .frame(maxWidth: .infinity)
                     .padding(10)
-                    .background(.subThree)
-                    .foregroundStyle(.white)
+                    .background(.subThree.opacity(0.5))
+                    .foregroundStyle(.white.opacity(0.8))
                     .cornerRadius(10)
                 }
                 

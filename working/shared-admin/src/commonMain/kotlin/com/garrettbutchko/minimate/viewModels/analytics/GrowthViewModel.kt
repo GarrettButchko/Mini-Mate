@@ -1,6 +1,7 @@
 package com.garrettbutchko.minimate.viewModels.analytics
 
 import com.garrettbutchko.minimate.dataModels.courseModels.DailyDoc
+import com.garrettbutchko.minimate.extensions.format
 import com.garrettbutchko.minimate.repositories.analytics.AnalyticsRange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

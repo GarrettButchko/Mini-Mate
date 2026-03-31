@@ -6,14 +6,11 @@
 //
 
 import SwiftUI
-import UIKit
 import shared_admin
 
 struct RetentionView: View {
     @EnvironmentObject var VM: RetentionViewModelSwift
     @EnvironmentObject var analyticsVM: AnalyticsViewModelSwift
-    @State private var shareURL: URL?
-    @State private var showShareSheet = false
     
     var body: some View {
         ScrollView(.vertical) {
@@ -60,33 +57,25 @@ struct RetentionView: View {
                         PlayerTierCard(
                             tier: .new,
                             players: VM.cachedNewPlayers,
-                            VM: VM,
-                            shareURL: $shareURL,
-                            showShareSheet: $showShareSheet
+                            VM: VM
                         )
                         
                         PlayerTierCard(
                             tier: .midTier,
                             players: VM.cachedMidTierPlayers,
-                            VM: VM,
-                            shareURL: $shareURL,
-                            showShareSheet: $showShareSheet
+                            VM: VM
                         )
                         
                         PlayerTierCard(
                             tier: .frequent,
                             players: VM.cachedFrequentPlayers,
-                            VM: VM,
-                            shareURL: $shareURL,
-                            showShareSheet: $showShareSheet
+                            VM: VM
                         )
                         
                         PlayerTierCard(
                             tier: .atRisk,
                             players: VM.cachedAtRiskPlayers,
-                            VM: VM,
-                            shareURL: $shareURL,
-                            showShareSheet: $showShareSheet
+                            VM: VM
                         )
                     }
                     .padding()
@@ -99,11 +88,6 @@ struct RetentionView: View {
             }
         }
         .contentMargins([.horizontal, .bottom, .top], 16)
-        .sheet(isPresented: $showShareSheet) {
-            if let url = shareURL {
-                ShareSheet(url: url)
-            }
-        }
     }
     
     var loadingState: some View {
@@ -194,10 +178,9 @@ struct PlayerTierCard: View {
     let tier: PlayerTier
     let players: [String: CourseEmail]
     let VM: RetentionViewModelSwift
-    @Binding var shareURL: URL?
-    @Binding var showShareSheet: Bool
     
     @State private var isExpanded = false
+    @State private var csvURL: URL?
     
     var emails: [String] {
         Array(players.keys).sorted()
@@ -257,8 +240,14 @@ struct PlayerTierCard: View {
                     emails: emails,
                     previewEmails: previewEmails,
                     onCopyToClipboard: copyToClipboard,
-                    onDownloadCSV: downloadCSV
+                    csvURL: csvURL
                 )
+                .onAppear {
+                    generateCSV()
+                }
+                .onChange(of: players) { _, _ in
+                    generateCSV()
+                }
             }
         }
         .background(
@@ -278,33 +267,24 @@ struct PlayerTierCard: View {
         impact.impactOccurred()
     }
     
-    private func downloadCSV() {
-        var csvContent = VM.kotlin.generateCSVContent(emails: emails)
-       
-        do {
-            let tempDirectory = FileManager.default.temporaryDirectory
-            let fileName = "players_\(UUID().uuidString).csv"
-            let fileURL = tempDirectory.appendingPathComponent(fileName)
-            
-            try csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
-            shareURL = fileURL
-        } catch {
-            print("❌ Failed to generate CSV file: \(error)")
+    private func generateCSV() {
+        // Run in background to avoid freezing the UI if lists are long
+        DispatchQueue.global(qos: .userInitiated).async {
+            let csvContent = VM.kotlin.generateCSVContent(emails: emails)
+           
+            do {
+                let tempDirectory = FileManager.default.temporaryDirectory
+                let fileName = "players_\(tier.label.lowercased()).csv"
+                let fileURL = tempDirectory.appendingPathComponent(fileName)
+                
+                try csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
+                
+                DispatchQueue.main.async {
+                    self.csvURL = fileURL
+                }
+            } catch {
+                print("❌ Failed to generate CSV file: \(error)")
+            }
         }
-        
-        showShareSheet = true
     }
-}
-
-// MARK: - Share Sheet Wrapper
-struct ShareSheet: UIViewControllerRepresentable {
-    let url: URL
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let activityItems: [Any] = [url]
-        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

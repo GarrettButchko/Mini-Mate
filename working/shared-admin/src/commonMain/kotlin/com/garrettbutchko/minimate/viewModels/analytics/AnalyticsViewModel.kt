@@ -4,6 +4,7 @@ import com.garrettbutchko.minimate.dataModels.courseModels.Course
 import com.garrettbutchko.minimate.dataModels.courseModels.CourseEmail
 import com.garrettbutchko.minimate.dataModels.courseModels.DailyDoc
 import com.garrettbutchko.minimate.extensions.toLocalDateTime
+import com.garrettbutchko.minimate.extensions.format
 import com.garrettbutchko.minimate.generateUUID
 import com.garrettbutchko.minimate.repositories.AnalyticsRepository
 import com.garrettbutchko.minimate.repositories.analytics.AnalyticsRange
@@ -18,8 +19,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlin.collections.iterator
-import kotlin.math.pow
-import kotlin.math.round
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -128,13 +127,6 @@ data class HoleHeatmapData(
     val holePar: Int
 )
 
-// MARK: - Helper Formatting
-fun Double.format(digits: Int): String {
-    val multiplier = 10.0.pow(digits)
-    val rounded = round(this * multiplier) / multiplier
-    return if (digits == 0) rounded.toInt().toString() else rounded.toString()
-}
-
 // MARK: - Main ViewModel
 open class AnalyticsViewModel(
     val analyticsRepo: AnalyticsRepository = AnalyticsRepository(),
@@ -242,6 +234,7 @@ open class AnalyticsViewModel(
         coroutineScope.launch {
             _allEmails.collect {
                 retentionVM.allEmails = it
+                retentionVM.recomputePlayerTiers()
             }
         }
     }

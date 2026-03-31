@@ -101,7 +101,9 @@ class AnalyticsViewModelSwift: ObservableObject {
         
         Task {
             for await val in kotlin.selectedSection {
-                self._selectedSection = val
+                withAnimation {
+                    self._selectedSection = val
+                }
             }
         }
         
@@ -158,16 +160,12 @@ class AnalyticsViewModelSwift: ObservableObject {
 
     func refreshAnalytics(course: Course?) {
         Task {
-            do {
-                try await kotlin.refreshAnalytics(course: course)
-            } catch {
-                print("Refresh error: \(error)")
-            }
+            kotlin.refreshAnalytics(course: course)
         }
     }
 
     func onAppearRetention(course: Course?) async throws {
-        try await kotlin.onAppearRetention(course: course)
+        kotlin.onAppearRetention(course: course)
     }
 
     func onChange(old: AnalyticsRange, new: AnalyticsRange, course: Course?) {

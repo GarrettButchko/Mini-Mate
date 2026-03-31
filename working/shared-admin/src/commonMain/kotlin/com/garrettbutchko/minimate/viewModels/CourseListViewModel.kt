@@ -67,7 +67,7 @@ open class CourseListViewModel(
 
     val hasCourse: Boolean
         get() {
-            val adminCourses = authModel?.userModel?.value?.adminCourses
+            val adminCourses = authModel.userModel.value?.adminCourses
             return !adminCourses.isNullOrEmpty()
         }
 
@@ -118,7 +118,7 @@ open class CourseListViewModel(
 
     fun getCourses() {
         _loadingCourse.value = true
-        val ids = authModel?.userModel?.value?.adminCourses
+        val ids = authModel.userModel?.value?.adminCourses
         
         if (!hasCourse || ids.isNullOrEmpty()) {
             _loadingCourse.value = false
@@ -134,7 +134,7 @@ open class CourseListViewModel(
 
     fun getCourse(completion: () -> Unit) {
         _loadingCourse.value = true
-        val firstCourseID = authModel?.userModel?.value?.adminCourses?.firstOrNull()
+        val firstCourseID = authModel.userModel.value?.adminCourses?.firstOrNull()
         
         if (!hasCourse || firstCourseID == null) {
             _loadingCourse.value = false
@@ -145,7 +145,7 @@ open class CourseListViewModel(
         coroutineScope.launch {
             val course = courseRepo.fetchCourse(firstCourseID)
             if (course != null) {
-                _userCourses.value = _userCourses.value + course
+                _userCourses.value += course
                 _selectedCourse.value = course
             }
             _loadingCourse.value = false
@@ -157,7 +157,7 @@ open class CourseListViewModel(
         coroutineScope.launch {
             val courseID = courseRepo.findCourseIDWithPassword(_password.value)
             
-            if (courseID != null && authModel != null) {
+            if (courseID != null) {
                 val currentUser = authModel!!.userModel.value
                 val currentAdminCourses = currentUser?.adminCourses ?: emptyList()
                 

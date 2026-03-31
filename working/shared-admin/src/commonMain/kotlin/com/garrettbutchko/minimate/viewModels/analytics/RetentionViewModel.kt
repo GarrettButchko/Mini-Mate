@@ -1,6 +1,7 @@
 package com.garrettbutchko.minimate.viewModels.analytics
 
 import com.garrettbutchko.minimate.dataModels.courseModels.CourseEmail
+import com.garrettbutchko.minimate.extensions.format
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -30,7 +31,7 @@ open class RetentionViewModel {
     }
     
     fun getMidTierPlayers(): Map<String, CourseEmail> {
-        val days = avgTimeToReturn()
+        val days = avgTimeToReturn().let { if (it > 0) it else 30 }
         return allEmails.filterValues { data ->
             val isInPlayRange = data.playCount in 2..5
             val isActive = isRecentlyActive(data.lastPlayed, days)
@@ -39,7 +40,7 @@ open class RetentionViewModel {
     }
     
     fun getFrequentPlayers(): Map<String, CourseEmail> {
-        val days = avgTimeToReturn()
+        val days = avgTimeToReturn().let { if (it > 0) it else 30 }
         return allEmails.filterValues { data ->
             val isHighPlayCount = data.playCount > 5
             val isActive = isRecentlyActive(data.lastPlayed, days)
@@ -48,7 +49,7 @@ open class RetentionViewModel {
     }
     
     fun getAtRiskPlayers(): Map<String, CourseEmail> {
-        val days = avgTimeToReturn()
+        val days = avgTimeToReturn().let { if (it > 0) it else 30 }
         return allEmails.filterValues { data ->
             val hasPlayedBefore = data.playCount > 1
             val isInactive = !isRecentlyActive(data.lastPlayed, days)
@@ -93,7 +94,7 @@ open class RetentionViewModel {
             count += 1
         }
         
-        return (if (count > 0) totalDays / count else 0) as Int
+        return (if (count > 0) totalDays / count else 0).toInt()
     }
     
     fun getAvgTimeToReturn(): DataPointObject {
@@ -142,23 +143,25 @@ open class RetentionViewModel {
         cachedAvgTimeToReturn = avgDays
         cached30DayRetention = calculate30DayRetention()
         
+        val activeThreshold = if (avgDays > 0) avgDays else 30
+        
         cachedNewPlayers = allEmails.filterValues { it.playCount == 1 }
         
         cachedMidTierPlayers = allEmails.filterValues { data ->
             val isInPlayRange = data.playCount in 2..5
-            val isActive = isRecentlyActive(data.lastPlayed, avgDays)
+            val isActive = isRecentlyActive(data.lastPlayed, activeThreshold)
             isInPlayRange && isActive
         }
         
         cachedFrequentPlayers = allEmails.filterValues { data ->
             val isHighPlayCount = data.playCount > 5
-            val isActive = isRecentlyActive(data.lastPlayed, avgDays)
+            val isActive = isRecentlyActive(data.lastPlayed, activeThreshold)
             isHighPlayCount && isActive
         }
         
         cachedAtRiskPlayers = allEmails.filterValues { data ->
             val hasPlayedBefore = data.playCount > 1
-            val isInactive = !isRecentlyActive(data.lastPlayed, avgDays)
+            val isInactive = !isRecentlyActive(data.lastPlayed, activeThreshold)
             hasPlayedBefore && isInactive
         }
     }

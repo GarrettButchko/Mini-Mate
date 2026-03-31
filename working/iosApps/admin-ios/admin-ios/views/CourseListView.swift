@@ -63,35 +63,26 @@ struct CourseListView: View {
             .onAppear {
                 Task {
                     // 1. Ensure you have the user ID (likely from your auth state)
-                    guard let userId = authModel.userModel?.googleId else { return }
-
-                    // 2. Call the suspend function (Swift sees it as async)
-                    // Note: Default arguments only work in Swift if you use the
-                    // SKIE library or similar, otherwise you must provide them.
-                    _ = try? await userRepo.loadOrCreateUser(
-                        id: userId,
-                        firebaseUser: nil,
-                        name: nil,
-                        signInMethod: nil,
-                        appleId: nil,
-                        guestGame: nil
-                    ) { user in
-                        // 3. This is your onUpdate(UserModel) callback
-                        // Since onUpdate is called when data is ready/reconciled:
-                        if viewModel.userCourses.isEmpty {
-                            let adminCount = user.adminCourses.count
-                            
-                            if adminCount > 1 {
-                                viewModel.kotlin.getCourses()
-                            } else if adminCount == 1 {
-                                viewModel.kotlin.getCourse {
-                                    Task { @MainActor in
-                                        viewManager.kotlinVM.navigateToCourseTab(tab: 1)
-                                    }
+                    guard let id = authModel.kotlinVM.currentUserIdentifier else { return }
+                    
+                    // Load user data and keep BOTH Swift and Kotlin models updated
+                    authModel.userModel = try await userRepo.loadOrCreateUser(id: id) { refreshedModel in
+                        DispatchQueue.main.async {
+                            self.authModel.userModel = refreshedModel
+                        }
+                    }
+                    
+                    if viewModel.userCourses.isEmpty {
+                        if let adminCount = authModel.userModel?.adminCourses.count, adminCount > 1 {
+                            viewModel.kotlin.getCourses()
+                        } else if let adminCount = authModel.userModel?.adminCourses.count, adminCount == 1 {
+                            viewModel.kotlin.getCourse {
+                                Task { @MainActor in
+                                    viewManager.kotlinVM.navigateToCourseTab(tab: 1)
                                 }
-                            } else {
-                                viewModel.loadingCourse = false
                             }
+                        } else {
+                            viewModel.loadingCourse = false
                         }
                     }
                 }
